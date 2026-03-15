@@ -11,6 +11,7 @@
 /resources/js/wayfinder
 /vendor
 .DS_Store
+Thumbs.db
 .env
 .env.backup
 .env.production
@@ -18,8 +19,7 @@
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
-npm-debug.log
-yarn-error.log
+*.log
 /auth.json
 /.fleet
 /.idea
