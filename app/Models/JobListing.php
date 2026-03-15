@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class JobListing extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id', 'title', 'company', 'company_logo', 'city', 'type',
+        'is_remote', 'description', 'apply_link', 'tech_stack', 'salary_range', 'is_active',
+    ];
+
+    protected $casts = [
+        'tech_stack' => 'array',
+        'is_remote'  => 'boolean',
+        'is_active'  => 'boolean',
+    ];
+
+    public function user() { return $this->belongsTo(User::class); }
+}
