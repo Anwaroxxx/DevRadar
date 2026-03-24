@@ -75,6 +75,18 @@ export default function AiChat() {
                             </>
                         )}
                         
+                        {/* Error Response */}
+                        {usePage().props.flash?.error && (
+                            <div className="flex items-start gap-4">
+                                <div className="w-8 h-8 border border-red-500 bg-red-500/20 flex items-center justify-center shrink-0">
+                                    <Terminal className="w-5 h-5 text-red-500" />
+                                </div>
+                                <div className="bg-red-500/10 border border-red-500 p-3 rounded-none max-w-[80%] text-red-500 whitespace-pre-wrap font-bold">
+                                    [SYS_ERROR] {usePage().props.flash.error}
+                                </div>
+                            </div>
+                        )}
+                        
                         {/* Loading State */}
                         {processing && (
                             <div className="flex items-start gap-4">

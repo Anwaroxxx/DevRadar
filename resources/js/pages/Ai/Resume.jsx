@@ -119,7 +119,7 @@ export default function AiResume() {
 
                                 <div className="relative z-10 font-sans text-base">
                                     {processing ? (
-                                        <div className="flex flex-col items-center justify-center h-full text-primary gap-6 font-mono py-20">
+                                        <div className="flex flex-col items-center justify-center h-full text-primary gap-6 font-mono py-20 relative z-10">
                                             <div className="relative">
                                                 <Bot className="w-16 h-16 animate-pulse" />
                                                 <div className="absolute top-0 left-0 w-full h-full border-2 border-primary rounded-full animate-ping opacity-20"></div>
@@ -133,11 +133,19 @@ export default function AiResume() {
                                         </div>
                                     ) : usePage().props.flash?.info ? (
                                         <div 
-                                            className="text-foreground/90 markdown-body prose prose-invert prose-p:text-foreground/90 prose-headings:text-primary prose-a:text-primary prose-strong:text-primary max-w-none font-mono"
+                                            className="text-foreground/90 markdown-body prose prose-invert prose-p:text-foreground/90 prose-headings:text-primary prose-a:text-primary prose-strong:text-primary max-w-none font-mono relative z-10"
                                             dangerouslySetInnerHTML={{__html: usePage().props.flash.info}}
                                         />
+                                    ) : usePage().props.flash?.error ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-red-500 gap-6 font-mono py-20 relative z-10">
+                                            <AlertTriangle className="w-16 h-16" />
+                                            <div className="text-sm uppercase tracking-widest text-center border border-red-500 bg-black/50 p-4">
+                                                Process_Terminated<br/><br/>
+                                                {usePage().props.flash.error}
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/30 gap-4 font-mono py-20">
+                                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/30 gap-4 font-mono py-20 relative z-10">
                                             <FileText className="w-16 h-16" />
                                             <div className="text-sm uppercase tracking-widest text-center border border-muted-foreground/30 p-4">
                                                 Buffer Empty<br/><br/>

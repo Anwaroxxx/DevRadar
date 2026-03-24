@@ -86,8 +86,16 @@ export default function AiCodeReview() {
                                 <div className="text-foreground/90 text-sm whitespace-pre-wrap leading-relaxed relative z-10">
                                     {usePage().props.flash.info}
                                 </div>
+                            ) : usePage().props.flash?.error ? (
+                                <div className="flex flex-col items-center justify-center h-full text-red-500 gap-4 relative z-10">
+                                    <AlertTriangle className="w-12 h-12" />
+                                    <div className="text-sm uppercase tracking-widest text-center border border-red-500 bg-black/50 p-4">
+                                        System Error<br/><br/>
+                                        {usePage().props.flash.error}
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 gap-2">
+                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 gap-2 relative z-10">
                                     <Code className="w-12 h-12" />
                                     <div className="text-xs uppercase tracking-widest text-center">
                                         Awaiting Code Input<br/>
