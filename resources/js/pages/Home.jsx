@@ -1,10 +1,11 @@
+import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Terminal, Plus, Activity, Cpu, Zap, Eye, Database, MapPin } from 'lucide-react';
+import { Terminal, Plus, Activity, Cpu, Zap, Eye, Database, MapPin ,  Briefcase , Shield } from 'lucide-react';
 
 // Fix leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -25,9 +26,40 @@ const hackerIcon = new L.Icon({
 });
 
 export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
+    const [typewriterText, setTypewriterText] = React.useState('');
+    const fullText = "DEVRADAR_MOROCCO.V1";
+    
+    React.useEffect(() => {
+        let i = 0;
+        const interval = setInterval(() => {
+            setTypewriterText(fullText.slice(0, i));
+            i++;
+            if (i > fullText.length) clearInterval(interval);
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
+
+    const Counter = ({ value, duration = 2 }) => {
+        const [count, setCount] = React.useState(0);
+        React.useEffect(() => {
+            let start = 0;
+            const end = parseInt(value);
+            if (start === end) return;
+            let totalMiliseconds = duration * 1000;
+            let incrementTime = totalMiliseconds / end;
+            let timer = setInterval(() => {
+                start += 1;
+                setCount(start);
+                if (start === end) clearInterval(timer);
+            }, incrementTime);
+            return () => clearInterval(timer);
+        }, [value, duration]);
+        return <span>{count.toLocaleString()}</span>;
+    };
+
     return (
         <HackerLayout>
-            <Head title="Home" />
+            <Head title="Home — Intelligence Hub" />
 
             <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
                 
@@ -43,29 +75,39 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                     <div className="flex flex-col lg:flex-row gap-10 relative z-10">
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-4">
-                                <span className="h-0.5 w-12 bg-primary"></span>
-                                <span className="text-primary font-mono text-xs font-black tracking-[0.3em]">INITIALIZING_PROTOCOL...</span>
+                                <span className="h-0.5 w-12 bg-primary animate-pulse"></span>
+                                <span className="text-primary font-mono text-xs font-black tracking-[0.3em] uppercase">SYSTEM_PROTOCOL: ACTIVE</span>
                             </div>
-                            <h1 className="text-5xl md:text-7xl font-black mb-6 uppercase tracking-tighter neon-text leading-tight">
-                                SYS.<span className="text-white">INIT</span>()_
+                            <h1 className="text-5xl md:text-8xl font-black mb-6 uppercase tracking-tighter leading-tight">
+                                <span className="text-primary">{typewriterText}</span>
+                                <span className="animate-pulse">_</span>
                             </h1>
                             <p className="text-lg text-muted-foreground mb-10 max-w-2xl font-mono leading-relaxed border-l-2 border-primary/20 pl-6 py-2">
-                                Welcome to <span className="text-primary font-bold">DevRadar Morocco</span>. The centralized intelligence hub for the network. 
-                                Track nodes, execute career updates, and synchronize with the cluster.
+                                The centralized intelligence hub for the <span className="text-primary font-bold">Moroccan Developer Network</span>. 
+                                Track nodes, execute career updates, and synchronize with the cluster in real-time.
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono mb-8">
-                                <div className="border border-primary/20 p-4 bg-primary/5 relative">
-                                    <div className="text-3xl font-black text-primary">{stats.events}</div>
-                                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Active_Events</div>
+                                <div className="border border-primary/20 p-6 bg-primary/5 relative group hover:border-primary/60 transition-all">
+                                    <div className="text-4xl font-black text-primary animate-glow-pulse">
+                                        <Counter value={stats.events} />
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-2">Active_Events</div>
+                                    <div className="absolute top-2 right-2 opacity-10"><Activity className="w-4 h-4" /></div>
                                 </div>
-                                <div className="border border-primary/20 p-4 bg-primary/5 relative">
-                                    <div className="text-3xl font-black text-primary">{stats.jobs}</div>
-                                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Open_Job_Pings</div>
+                                <div className="border border-primary/20 p-6 bg-primary/5 relative group hover:border-primary/60 transition-all">
+                                    <div className="text-4xl font-black text-primary animate-glow-pulse">
+                                        <Counter value={stats.jobs} />
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-2">Open_Job_Pings</div>
+                                    <div className="absolute top-2 right-2 opacity-10"><Briefcase className="w-4 h-4" /></div>
                                 </div>
-                                <div className="border border-primary/20 p-4 bg-primary/5 relative">
-                                    <div className="text-3xl font-black text-primary">{stats.communities}</div>
-                                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Sync_Active_Nodes</div>
+                                <div className="border border-primary/20 p-6 bg-primary/5 relative group hover:border-primary/60 transition-all">
+                                    <div className="text-4xl font-black text-primary animate-glow-pulse">
+                                        <Counter value={stats.communities} />
+                                    </div>
+                                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-2">Sync_Active_Nodes</div>
+                                    <div className="absolute top-2 right-2 opacity-10"><Cpu className="w-4 h-4" /></div>
                                 </div>
                             </div>
                         </div>
@@ -77,6 +119,12 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                                     <Terminal className="w-4 h-4" /> QUICK_ACTIONS.EXE
                                 </div>
                                 <div className="space-y-2">
+                                    {auth?.user?.is_admin && (
+                                        <Link href="/admin" className="flex items-center justify-between p-2 border border-yellow-400/50 hover:border-yellow-400 hover:bg-yellow-400/10 transition-all group text-yellow-400">
+                                            <span>&gt; ADMIN_PANEL</span>
+                                            <Shield className="w-3 h-3 text-yellow-400" />
+                                        </Link>
+                                    )}
                                     <Link href="/events/create" className="flex items-center justify-between p-2 border border-primary/20 hover:border-primary hover:bg-primary/10 transition-all group">
                                         <span>&gt; INIT_EVENT</span>
                                         <Plus className="w-3 h-3 text-primary" />

@@ -39,12 +39,16 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user() ? clone $request->user() : null,
+                'user' => $request->user() ? array_merge($request->user()->toArray(), [
+                    'is_admin'       => $request->user()->isAdmin(),
+                    'has_ai_access'  => $request->user()->has_ai_access,
+                ]) : null,
             ],
             'flash' => [
-                'success' => $request->session()->get('success'),
-                'error'   => $request->session()->get('error'),
-                'info'    => $request->session()->get('info'),
+                'success'      => $request->session()->get('success'),
+                'error'        => $request->session()->get('error'),
+                'info'         => $request->session()->get('info'),
+                'user_message' => $request->session()->get('user_message'),
             ],
             'csrf_token' => csrf_token(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',

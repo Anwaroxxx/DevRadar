@@ -15,6 +15,7 @@ class User extends Authenticatable
     ];
 
     protected $hidden = ['password', 'remember_token'];
+    protected $appends = ['is_admin'];
 
     protected function casts(): array
     {
@@ -30,6 +31,16 @@ class User extends Authenticatable
     {
         if (!$this->ai_access_until) return false;
         return $this->ai_access_until->isFuture();
+    }
+
+    public function getIsAdminAttribute(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 
     // Relationships
@@ -83,10 +94,20 @@ class User extends Authenticatable
         $this->checkBadges();
     }
 
-    public function spendXp(int $amount): bool
+    public function spendXp(int $amount, string $action, string $description): bool
     {
         if ($this->xp < $amount) return false;
         $this->decrement('xp', $amount);
+        
+        ActivityLog::create([
+            'user_id'     => $this->id,
+            'action'      => $action,
+            'description' => $description,
+            'xp_change'   => -$amount, // Negative for spending
+            'loggable_id'   => 0,
+            'loggable_type' => 'marketplace',
+        ]);
+        
         return true;
     }
 

@@ -25,7 +25,7 @@ Route::get('/support', fn() => inertia('Support'))->name('support');
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
-    // Events
+    // Events (create BEFORE show to avoid route conflict)
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::post('/events/{event}/save', [EventController::class, 'toggleSave'])->name('events.save');
@@ -68,6 +68,33 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat/search', [ChatController::class, 'search'])->name('chat.search');
     Route::get('/chat/{user:username}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/chat/{user}', [ChatController::class, 'store'])->name('chat.store');
+
+    // Admin Panel
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('dashboard');
+
+        // Users
+        Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('users');
+        Route::put('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('users.update');
+        Route::post('/users/{user}/grant-ai', [\App\Http\Controllers\AdminController::class, 'grantAiAccess'])->name('users.grant-ai');
+        Route::post('/users/{user}/revoke-ai', [\App\Http\Controllers\AdminController::class, 'revokeAiAccess'])->name('users.revoke-ai');
+        Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.delete');
+
+        // Events
+        Route::get('/events', [\App\Http\Controllers\AdminController::class, 'events'])->name('events');
+        Route::post('/events/{event}/approve', [\App\Http\Controllers\AdminController::class, 'approveEvent'])->name('events.approve');
+        Route::post('/events/{event}/reject', [\App\Http\Controllers\AdminController::class, 'rejectEvent'])->name('events.reject');
+        Route::delete('/events/{event}', [\App\Http\Controllers\AdminController::class, 'deleteEvent'])->name('events.delete');
+
+        // Jobs
+        Route::get('/jobs', [\App\Http\Controllers\AdminController::class, 'jobs'])->name('jobs');
+        Route::post('/jobs/{job}/toggle', [\App\Http\Controllers\AdminController::class, 'toggleJob'])->name('jobs.toggle');
+        Route::delete('/jobs/{job}', [\App\Http\Controllers\AdminController::class, 'deleteJob'])->name('jobs.delete');
+
+        // Communities
+        Route::get('/communities', [\App\Http\Controllers\AdminController::class, 'communities'])->name('communities');
+        Route::delete('/communities/{community}', [\App\Http\Controllers\AdminController::class, 'deleteCommunity'])->name('communities.delete');
+    });
 });
 
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');

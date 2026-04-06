@@ -68,12 +68,12 @@ class MarketplaceController extends Controller
 
         $product = $products[$request->product_id];
 
-        if ($user->xp < $product['cost']) {
+        // Spend XP with logging
+        $spent = $user->spendXp($product['cost'], 'purchase', "Purchased {$product['name']} from marketplace.");
+        
+        if (!$spent) {
             return back()->with('error', 'INSUFFICIENT_XP: Power reserves below required threshold.');
         }
-
-        // Spend XP
-        $user->decrement('xp', $product['cost']);
 
         // Handle types
         if ($product['type'] === 'ai_access') {

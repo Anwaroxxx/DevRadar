@@ -27,31 +27,23 @@ class AiController extends Controller
 
     public function chat(Request $request)
     {
-        $request->validate(['message' => 'required|string|max:2000']);
-
-        if (!$request->user()->has_ai_access) {
-            return back()->with('error', 'AI Access Expired. Visit Marketplace to renew.');
-        }
+        $request->validate(['message' => 'required|string|max:4000']);
 
         $reply = $this->askGroq([
-            ['role' => 'system', 'content' => 'You are a helpful Moroccan developer assistant. Answer coding questions concisely and clearly.'],
+            ['role' => 'system', 'content' => 'You are DevRadar AI — a helpful assistant specialized in helping Moroccan developers with coding questions, career advice, tech events in Morocco, and software development best practices. Be concise, friendly, and technical.'],
             ['role' => 'user',   'content' => $request->message],
         ]);
 
-        return back()->with('info', $reply);
+        return back()->with('info', $reply)->with('user_message', $request->message);
     }
 
     public function reviewCode(Request $request)
     {
         $request->validate(['code' => 'required|string', 'language' => 'nullable|string']);
 
-        if (!$request->user()->has_ai_access) {
-            return back()->with('error', 'AI Access Expired. Visit Marketplace to renew.');
-        }
-
         $lang = $request->language ?? 'unknown';
         $reply = $this->askGroq([
-            ['role' => 'system', 'content' => "You are an expert code reviewer. Review the following $lang code and provide: 1) Issues found 2) Improvements 3) Optimizations. Be concise."],
+            ['role' => 'system', 'content' => "You are an expert code reviewer. Review the following {$lang} code and provide: 1) Issues found 2) Improvements suggested 3) Best practices. Format with clear sections. Be direct and technical."],
             ['role' => 'user',   'content' => $request->code],
         ]);
 
@@ -61,25 +53,22 @@ class AiController extends Controller
     public function buildResume(Request $request)
     {
         $request->validate([
-            'name'       => 'required|string',
-            'skills'     => 'required|string',
-            'experience' => 'nullable|string',
-            'education'  => 'nullable|string',
-            'type'       => 'required|in:cv,linkedin,portfolio',
+            'name'        => 'required|string',
+            'target_role' => 'required|string',
+            'skills'      => 'nullable|string',
+            'experience'  => 'nullable|string',
+            'education'   => 'nullable|string',
+            'type'        => 'required|in:cv,linkedin,portfolio',
         ]);
 
-        if (!$request->user()->has_ai_access) {
-            return back()->with('error', 'AI Access Expired. Visit Marketplace to renew.');
-        }
-
         $prompt = match ($request->type) {
-            'cv'        => "Generate a professional developer CV for {$request->name}. Skills: {$request->skills}. Experience: {$request->experience}. Education: {$request->education}.",
-            'linkedin'  => "Write a compelling LinkedIn summary for a developer named {$request->name}. Skills: {$request->skills}.",
-            'portfolio' => "Write a portfolio bio/description for developer {$request->name}. Skills: {$request->skills}.",
+            'cv'        => "Generate a professional developer CV for {$request->name} targeting a {$request->target_role} role.\nSkills: {$request->skills}\nExperience: {$request->experience}\nEducation: {$request->education}\nFormat as a clean, professional CV with sections.",
+            'linkedin'  => "Write a compelling LinkedIn summary/About section for a developer named {$request->name} targeting {$request->target_role}.\nSkills: {$request->skills}\nExperience: {$request->experience}\nMake it engaging, professional, and personal.",
+            'portfolio' => "Write a portfolio bio/introduction for developer {$request->name} targeting {$request->target_role}.\nSkills: {$request->skills}\nExperience: {$request->experience}\nMake it stand out.",
         };
 
         $reply = $this->askGroq([
-            ['role' => 'system', 'content' => 'You are a professional career coach specializing in tech industry CVs and LinkedIn profiles.'],
+            ['role' => 'system', 'content' => 'You are a professional career coach and technical writer specializing in developer CVs, LinkedIn profiles, and portfolio content. Create polished, ATS-friendly professional content.'],
             ['role' => 'user',   'content' => $prompt],
         ]);
 
@@ -94,12 +83,8 @@ class AiController extends Controller
             'details' => 'nullable|string',
         ]);
 
-        if (!$request->user()->has_ai_access) {
-            return back()->with('error', 'AI Access Expired. Visit Marketplace to renew.');
-        }
-
         $reply = $this->askGroq([
-            ['role' => 'system', 'content' => "Generate an engaging {$request->type} post for the Moroccan tech community. Keep it professional and exciting."],
+            ['role' => 'system', 'content' => "Generate an engaging {$request->type} post for the Moroccan tech community. Keep it professional, exciting, and in English. Use emojis where appropriate. Format for social media."],
             ['role' => 'user',   'content' => "Topic: {$request->topic}\nDetails: {$request->details}"],
         ]);
 
@@ -111,7 +96,7 @@ class AiController extends Controller
         $request->validate(['interests' => 'required|string']);
 
         $reply = $this->askGroq([
-            ['role' => 'system', 'content' => 'You suggest tech events and activities for developers in Morocco based on their interests. Be helpful and practical.'],
+            ['role' => 'system', 'content' => 'You suggest tech events, meetups, hackathons and communities for developers in Morocco based on their interests. Be specific, helpful and practical. Mention real Moroccan tech communities if relevant.'],
             ['role' => 'user',   'content' => "My tech interests: {$request->interests}. What events or activities should I look for in Morocco?"],
         ]);
 
@@ -122,20 +107,29 @@ class AiController extends Controller
 
     private function askGroq(array $messages): string
     {
-        $response = Http::withoutVerifying()->withHeaders([
-            'Authorization' => "Bearer {$this->apiKey}",
-            'Content-Type'  => 'application/json',
-        ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model'       => $this->model,
-            'messages'    => $messages,
-            'max_tokens'  => 1024,
-            'temperature' => 0.7,
-        ]);
-
-        if ($response->failed()) {
-            return 'AI service temporarily unavailable. Please try again.';
+        if (!$this->apiKey) {
+            return 'AI service not configured. Please set the GROQ_API_KEY in your .env file.';
         }
 
-        return $response->json('choices.0.message.content', 'No response generated.');
+        try {
+            $response = Http::withoutVerifying()->timeout(30)->withHeaders([
+                'Authorization' => "Bearer {$this->apiKey}",
+                'Content-Type'  => 'application/json',
+            ])->post('https://api.groq.com/openai/v1/chat/completions', [
+                'model'       => $this->model,
+                'messages'    => $messages,
+                'max_tokens'  => 2048,
+                'temperature' => 0.7,
+            ]);
+
+            if ($response->failed()) {
+                $error = $response->json('error.message', 'Unknown error');
+                return "AI service error: {$error}";
+            }
+
+            return $response->json('choices.0.message.content', 'No response generated.');
+        } catch (\Exception $e) {
+            return 'AI service temporarily unavailable. Please try again in a moment.';
+        }
     }
 }

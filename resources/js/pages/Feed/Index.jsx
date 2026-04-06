@@ -1,15 +1,35 @@
+import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { Activity, Radio, Network, GitPullRequest, Bookmark, Hash } from 'lucide-react';
 
-export default function FeedIndex({ recentEvents, recentJobs, recentCommunities, trendingTags }) {
+export default function FeedIndex({ recentEvents, recentJobs, recentCommunities, trendingTags, activeNodes }) {
     // Combine logs into a single feed and sort by date descending
     const feed = [
         ...recentEvents.map(e => ({ type: 'event', data: e, date: new Date(e.created_at) })),
         ...recentJobs.map(j => ({ type: 'job', data: j, date: new Date(j.created_at) })),
         ...recentCommunities.map(c => ({ type: 'community', data: c, date: new Date(c.created_at) }))
     ].sort((a, b) => b.date - a.date);
+
+    const Counter = ({ value, duration = 2 }) => {
+        const [count, setCount] = React.useState(0);
+        React.useEffect(() => {
+            let start = 0;
+            const end = parseInt(value);
+            if (start === end) return;
+            if (end === 0) return;
+            let totalMiliseconds = duration * 1000;
+            let incrementTime = Math.max(totalMiliseconds / end, 10);
+            let timer = setInterval(() => {
+                start += 1;
+                setCount(start);
+                if (start === end) clearInterval(timer);
+            }, incrementTime);
+            return () => clearInterval(timer);
+        }, [value, duration]);
+        return <span>{count.toLocaleString()}</span>;
+    };
 
     return (
         <HackerLayout>
@@ -52,7 +72,11 @@ export default function FeedIndex({ recentEvents, recentJobs, recentCommunities,
                                     </div>
                                     
                                     <div className="text-sm font-mono text-muted-foreground mb-1">
-                                        User <Link href={`/profile/${item.data.user?.username}`} className="text-primary hover:underline">@{item.data.user?.username}</Link> deployed:
+                                        {item.data.user ? (
+                                            <>User <Link href={`/profile/${item.data.user.username}`} className="text-primary hover:underline">@{item.data.user.username}</Link> deployed:</>
+                                        ) : (
+                                            <>System deployed:</>
+                                        )}
                                     </div>
                                     
                                     {item.type === 'event' && (
@@ -113,7 +137,7 @@ export default function FeedIndex({ recentEvents, recentJobs, recentCommunities,
                         <ul className="space-y-2 text-xs font-mono text-muted-foreground">
                             <li className="flex justify-between"><span>Status:</span> <span className="text-primary animate-pulse">OPTIMAL</span></li>
                             <li className="flex justify-between"><span>Latency:</span> <span>12ms</span></li>
-                            <li className="flex justify-between"><span>Active Nodes:</span> <span>{(Math.random() * 1000).toFixed(0)}</span></li>
+                            <li className="flex justify-between"><span>Active Nodes:</span> <span className="text-primary"><Counter value={activeNodes || 0} /></span></li>
                             <li className="flex justify-between"><span>Security:</span> <span className="text-primary">SECURE</span></li>
                         </ul>
                     </div>

@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\JobListing;
 use App\Models\Community;
 use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -40,6 +41,7 @@ class FeedController extends Controller
             'recentJobs'        => $recentJobs,
             'recentCommunities' => $recentCommunities,
             'trendingTags'      => $trendingTags,
+            'activeNodes'       => User::count(),
         ]);
     }
 }

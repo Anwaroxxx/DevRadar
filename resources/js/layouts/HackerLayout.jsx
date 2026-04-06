@@ -1,11 +1,20 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap } from 'lucide-react';
+import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap, Menu, X, Shield, Clock as ClockIcon } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import AsciiWaterfall from '@/components/AsciiWaterfall';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function HackerLayout({ children }) {
     const { auth, flash } = usePage().props;
     const user = auth?.user;
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [time, setTime] = useState(new Date());
+
+    // Live Clock Logic
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
     
     // Forced Dark Mode Identity
     useEffect(() => {
@@ -13,8 +22,24 @@ export default function HackerLayout({ children }) {
         document.documentElement.classList.remove('light');
     }, []);
 
+    const baseNavLinks = [
+        { href: '/',             label: 'Map',          icon: Map },
+        { href: '/events',       label: 'Events',       icon: Calendar },
+        { href: '/jobs',         label: 'Jobs',         icon: Briefcase },
+        { href: '/communities',  label: 'Communities',  icon: Users },
+        { href: '/leaderboard',  label: 'Leaderboard',  icon: Trophy },
+        { href: '/chat',         label: 'Chat',         icon: MessageSquare },
+        { href: '/ai/chat',      label: 'AI Hub',       icon: Cpu, pulse: true },
+        { href: '/marketplace',  label: 'Marketplace',  icon: Zap, glow: true },
+    ];
+
+    const navLinks = [
+        ...baseNavLinks,
+        ...( (user?.role === 'admin' || user?.is_admin) ? [{ href: '/admin', label: 'Admin', icon: Shield, admin: true }] : [] )
+    ];
+
     return (
-        <div className="min-h-screen bg-[#050505] text-foreground font-sans flex flex-col selection:bg-primary selection:text-primary-foreground transition-colors duration-500">
+        <div className="min-h-screen bg-[#050505] text-foreground font-sans flex flex-col selection:bg-primary selection:text-primary-foreground transition-colors duration-500 overflow-x-hidden">
             {/* Ascii Background */}
             <AsciiWaterfall />
 
@@ -23,60 +48,65 @@ export default function HackerLayout({ children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         
-                        {/* Logo */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-4">
+                            {/* Mobile Menu Button */}
+                            <button 
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="md:hidden p-2 text-primary hover:bg-primary/20 transition-colors"
+                            >
+                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+
+                            {/* Logo */}
                             <Link href="/" className="flex items-center gap-2">
                                 <Terminal className="w-6 h-6 text-primary" />
-                                <span className="font-bold tracking-tighter">DEV<span className="text-primary">RADAR</span>_</span>
+                                <span className="font-bold tracking-tighter uppercase">DEV<span className="text-primary">RADAR</span>_</span>
                             </Link>
                         </div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden md:flex gap-4 lg:gap-6 items-center flex-1 justify-center text-[13px] font-bold uppercase tracking-tight">
-                            <Link href="/" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Map className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Map
-                            </Link>
-                            <Link href="/events" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Calendar className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Events
-                            </Link>
-                            <Link href="/jobs" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Briefcase className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Jobs
-                            </Link>
-                            <Link href="/communities" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Users className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Communities
-                            </Link>
-                            <Link href="/leaderboard" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Trophy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Leaderboard
-                            </Link>
-                            <Link href="/chat" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <MessageSquare className="w-3.5 h-3.5 group-hover:scale-110 transition-transform"/> Chat
-                            </Link>
-                            <Link href="/ai/chat" className="hover:text-primary transition-colors flex items-center gap-1.5 group">
-                                <Cpu className="w-3.5 h-3.5 group-hover:scale-110 transition-transform animate-pulse"/> AI Hub
-                            </Link>
-                            <Link href="/marketplace" className="hover:text-primary transition-colors flex items-center gap-1.5 group text-primary/80">
-                                <Zap className="w-3.5 h-3.5 group-hover:scale-110 transition-transform fill-primary/20"/> Marketplace
-                            </Link>
+                        <nav className="hidden md:flex gap-4 lg:gap-6 items-center flex-1 justify-center text-[11px] lg:text-[13px] font-bold uppercase tracking-tight overflow-x-auto no-scrollbar">
+                            {navLinks.map((link) => (
+                                <Link 
+                                    key={link.href}
+                                    href={link.href} 
+                                    className={`hover:text-primary transition-colors flex items-center gap-1.5 group shrink-0 ${link.admin ? 'text-yellow-400' : ''}`}
+                                >
+                                    <link.icon className={`w-3.5 h-3.5 group-hover:scale-110 transition-transform ${link.pulse ? 'animate-pulse' : ''} ${link.glow ? 'fill-primary/20' : ''}`}/> 
+                                    {link.label}
+                                </Link>
+                            ))}
                         </nav>
 
-                        {/* User Menu */}
-                        <div className="flex items-center gap-3 lg:gap-4 shrink-0">
+                        {/* Right Area: Clock & User */}
+                        <div className="flex items-center gap-3 lg:gap-6 shrink-0">
+                            {/* System Clock */}
+                            <div className="hidden lg:flex items-center gap-2 border-l border-border pl-6 font-mono text-[10px] text-muted-foreground/60 tracking-[0.2em]">
+                                <ClockIcon className="w-3 h-3 text-primary/40" />
+                                {time.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </div>
+
                             {user ? (
                                 <div className="flex items-center gap-3 lg:gap-4">
                                     <div className="hidden sm:flex flex-col items-end leading-none">
-                                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{user.username}</span>
+                                        <div className="flex items-center gap-2">
+                                            {user.is_admin && (
+                                                <span className="text-[8px] bg-yellow-400 text-black px-1 font-black animate-pulse">SUDO</span>
+                                            )}
+                                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{user.username}</span>
+                                        </div>
                                         <div className="flex items-center gap-1 mt-1">
                                             <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
                                             <span className="text-[10px] text-muted-foreground font-mono">{user.xp} XP</span>
                                         </div>
                                     </div>
-                                    <Link href={`/profile/${user.username}`} className="w-9 h-9 border-2 border-primary/50 flex items-center justify-center font-black text-sm bg-card text-primary shrink-0 uppercase shadow-[0_0_15px_rgba(34,197,94,0.1)] relative group overflow-hidden">
+                                    <Link href={user.is_admin ? "/admin" : `/profile/${user.username}`} className={`w-9 h-9 border-2 flex items-center justify-center font-black text-sm bg-card shrink-0 uppercase relative group overflow-hidden ${user.is_admin ? 'border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]' : 'border-primary/50 text-primary shadow-[0_0_15px_rgba(34,197,94,0.1)]'}`}>
                                         {user.avatar ? (
                                             <img src={user.avatar} className="w-full h-full object-cover" />
                                         ) : (
                                             user.name.charAt(0)
                                         )}
-                                        <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${user.is_admin ? 'bg-yellow-400/20' : 'bg-primary/20'}`}></div>
                                     </Link>
                                     <Link href="/logout" method="post" as="button" className="p-2 text-muted-foreground hover:text-destructive transition-colors group">
                                         <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -95,19 +125,88 @@ export default function HackerLayout({ children }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Mobile Navigation Menu */}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="md:hidden bg-card border-b border-border overflow-hidden"
+                        >
+                            <nav className="p-4 flex flex-col gap-4 font-bold uppercase text-sm">
+                                {navLinks.map((link) => (
+                                    <Link 
+                                        key={link.href}
+                                        href={link.href} 
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={`flex items-center gap-3 p-2 hover:bg-primary/10 transition-all ${link.admin ? 'text-yellow-400' : ''}`}
+                                    >
+                                        <link.icon className={`w-4 h-4 ${link.pulse ? 'animate-pulse' : ''}`} />
+                                        {link.label}
+                                    </Link>
+                                ))}
+                                <div className="border-t border-border mt-2 pt-4 flex items-center justify-between font-mono text-[9px] text-muted-foreground uppercase">
+                                    <span>SYS_CLOCK: {time.toLocaleTimeString()}</span>
+                                    <span>LVL_SEC: HI_VIS</span>
+                                </div>
+                            </nav>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </header>
 
-            {/* Flash Messages */}
-            {flash?.success && (
-                <div className="bg-primary text-primary-foreground py-2 px-4 shadow-[0_4px_10px_rgba(34,197,94,0.2)] relative z-50 flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-widest animate-in slide-in-from-top-full duration-500">
-                    <Terminal className="w-4 h-4" /> [SYS]: {flash.success}
-                </div>
-            )}
+            {/* Neural Notification Cluster */}
+            <div className="fixed top-20 right-6 z-[60] flex flex-col gap-4 pointer-events-none w-80">
+                <AnimatePresence>
+                    {(flash?.success || flash?.error || flash?.info) && (
+                        <motion.div
+                            initial={{ x: 300, opacity: 0, scale: 0.9 }}
+                            animate={{ x: 0, opacity: 1, scale: 1 }}
+                            exit={{ x: 300, opacity: 0, scale: 0.9 }}
+                            className={`p-4 border-2 backdrop-blur-xl shadow-2xl relative overflow-hidden pointer-events-auto ${
+                                flash?.error ? 'border-red-500 bg-red-500/10 text-red-500' : 
+                                flash?.info ? 'border-blue-500 bg-blue-500/10 text-blue-500' :
+                                'border-primary bg-primary/10 text-primary'
+                            }`}
+                        >
+                            <div className="absolute top-0 left-0 w-full h-[1px] bg-white/20 animate-scan opacity-30" />
+                            <div className="flex items-start gap-3">
+                                <Terminal className="w-5 h-5 shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 flex justify-between">
+                                        <span>[SYS_MESSAGE]</span>
+                                        <span className="opacity-40">{new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                    <div className="text-xs font-mono font-bold leading-tight">
+                                        {flash?.success || flash?.error || flash?.info}
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        // Since we can't easily clear flash from here without a trip to the server, 
+                                        // we'll just let it be for now or rely on the next navigation.
+                                    }}
+                                    className="opacity-40 hover:opacity-100 transition-opacity"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                            
+                            {/* Decorative Corner HUD */}
+                            <div className={`absolute bottom-1 right-1 w-2 h-2 border-r border-b ${flash?.error ? 'border-red-500' : 'border-primary'}`} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
             
             {/* Main Content */}
             <main className="flex-1 w-full relative">
                 {/* Premium Hacker Overlays */}
-                <div className="scanline pointer-events-none opacity-[0.05]"></div>
+                <div className="scanline pointer-events-none opacity-[0.05] overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-primary/20 animate-scan shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                </div>
                 
                 <div className="relative z-10 crt-flicker">
                     {children}
@@ -115,9 +214,9 @@ export default function HackerLayout({ children }) {
             </main>
 
             {/* Hacker Footer */}
-            <footer className="border-t border-border bg-black/80 py-8 relative z-10">
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                    <div>© {new Date().getFullYear()} DEVRADAR_MOROCCO // ALL_SYSTEMS_GO</div>
+            <footer className="border-t border-border bg-black/80 py-8 relative z-10 shrink-0">
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-mono text-muted-foreground uppercase tracking-widest text-center md:text-left">
+                    <div>© {new Date().getFullYear()} DEVRADAR_MOROCCO // ALL_SYSTEMS_GO // BUILD: 2026.04.05</div>
                     <div className="flex gap-6">
                         <Link href="/about" className="hover:text-primary transition-colors">/ABOUT</Link>
                         <Link href="/support" className="hover:text-primary transition-colors">/SUPPORT</Link>
@@ -128,3 +227,4 @@ export default function HackerLayout({ children }) {
         </div>
     );
 }
+
