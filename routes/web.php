@@ -109,6 +109,24 @@ Route::middleware('auth')->group(function () {
         Route::get('/approval-queue', [\App\Http\Controllers\AdminController::class, 'approvalQueue'])->name('approval-queue');
         Route::post('/approve/{type}/{id}', [\App\Http\Controllers\AdminController::class, 'approveContent'])->name('approve');
         Route::post('/reject/{type}/{id}', [\App\Http\Controllers\AdminController::class, 'rejectContent'])->name('reject');
+
+        // Phase 2: Marketplace Management
+        Route::get('/marketplace', [\App\Http\Controllers\AdminController::class, 'marketplace'])->name('marketplace');
+        Route::post('/marketplace/{item}/toggle', [\App\Http\Controllers\AdminController::class, 'toggleMarketplaceItem'])->name('marketplace.toggle');
+        Route::put('/marketplace/{item}/price', [\App\Http\Controllers\AdminController::class, 'updateMarketplaceItemPrice'])->name('marketplace.price');
+        Route::delete('/marketplace/{item}', [\App\Http\Controllers\AdminController::class, 'deleteMarketplaceItem'])->name('marketplace.delete');
+
+        // Phase 2: XP Economy
+        Route::get('/xp-economy', [\App\Http\Controllers\AdminController::class, 'xpEconomy'])->name('xp-economy');
+        Route::put('/xp-rewards/{reward}', [\App\Http\Controllers\AdminController::class, 'updateXpReward'])->name('xp-rewards.update');
+        Route::post('/xp-rewards', [\App\Http\Controllers\AdminController::class, 'createXpReward'])->name('xp-rewards.create');
+
+        // Phase 2: AI Access Control
+        Route::get('/ai-access', [\App\Http\Controllers\AdminController::class, 'aiAccess'])->name('ai-access');
+        Route::put('/users/{user}/ai-tier', [\App\Http\Controllers\AdminController::class, 'updateUserAiTier'])->name('users.ai-tier');
+        Route::post('/users/{user}/grant-ai', [\App\Http\Controllers\AdminController::class, 'grantAiAccess'])->name('users.grant-ai');
+        Route::post('/users/{user}/revoke-ai', [\App\Http\Controllers\AdminController::class, 'revokeAiAccess'])->name('users.revoke-ai');
+        Route::post('/users/{user}/reset-ai-usage', [\App\Http\Controllers\AdminController::class, 'resetAiMonthlyUsage'])->name('users.reset-ai-usage');
     });
 });
 

@@ -9,6 +9,9 @@ use App\Models\Community;
 use App\Models\ActivityLog;
 use App\Models\Badge;
 use App\Models\ContentReport;
+use App\Models\MarketplaceItem;
+use App\Models\XpReward;
+use App\Models\AiUsageLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -473,5 +476,171 @@ class AdminController extends Controller
         };
 
         return back()->with('success', ucfirst($type) . ' rejected.');
+    }
+
+    // ─────────── Phase 2: Marketplace Management ───────────
+
+    public function marketplace(Request $request)
+    {
+        $query = MarketplaceItem::latest();
+
+        if ($request->search) {
+            $query->where('name', 'LIKE', "%{$request->search}%");
+        }
+
+        if ($request->category) {
+            $query->where('category', $request->category);
+        }
+
+        $items = $query->paginate(20)->withQueryString();
+
+        return Inertia::render('Admin/Marketplace', [
+            'items' => $items,
+            'filters' => $request->only(['search', 'category']),
+            'categories' => ['badge', 'cosmetic', 'feature', 'boost'],
+        ]);
+    }
+
+    public function toggleMarketplaceItem(MarketplaceItem $item)
+    {
+        $item->update(['is_available' => !$item->is_available]);
+        $status = $item->is_available ? 'enabled' : 'disabled';
+        return back()->with('success', "Item '{$item->name}' {$status}.");
+    }
+
+    public function updateMarketplaceItemPrice(Request $request, MarketplaceItem $item)
+    {
+        $request->validate([
+            'price_xp' => 'required|integer|min:1',
+            'max_quantity' => 'nullable|integer|min:1',
+        ]);
+
+        $item->update($request->only(['price_xp', 'max_quantity']));
+        return back()->with('success', "Item '{$item->name}' updated.");
+    }
+
+    public function deleteMarketplaceItem(MarketplaceItem $item)
+    {
+        $name = $item->name;
+        $item->delete();
+        return back()->with('success', "Item '{$name}' deleted.");
+    }
+
+    // ─────────── Phase 2: XP Economy ───────────
+
+    public function xpEconomy(Request $request)
+    {
+        $rewards = XpReward::all();
+        $userXpStats = User::selectRaw('AVG(total_xp_earned) as avg_earned, SUM(total_xp_earned) as total_earned, COUNT(*) as user_count')
+            ->first();
+
+        return Inertia::render('Admin/XpEconomy', [
+            'rewards' => $rewards,
+            'stats' => [
+                'avg_earned' => (int)($userXpStats->avg_earned ?? 0),
+                'total_earned' => (int)($userXpStats->total_earned ?? 0),
+                'user_count' => $userXpStats->user_count ?? 0,
+            ],
+        ]);
+    }
+
+    public function updateXpReward(Request $request, XpReward $reward)
+    {
+        $request->validate([
+            'amount' => 'required|integer|min:1|max:10000',
+            'is_active' => 'required|boolean',
+        ]);
+
+        $reward->update($request->only(['amount', 'is_active']));
+        return back()->with('success', "XP reward '{$reward->action}' updated.");
+    }
+
+    public function createXpReward(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|string|max:100',
+            'amount' => 'required|integer|min:1|max:10000',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        XpReward::create($request->only(['action', 'amount', 'description']));
+        return back()->with('success', 'XP reward created.');
+    }
+
+    // ─────────── Phase 2: AI Access Control ───────────
+
+    public function aiAccess(Request $request)
+    {
+        $users = User::selectRaw('id, name, username, email, ai_tier, ai_monthly_tokens, ai_tokens_used_this_month, ai_access_until')
+            ->where('ai_access_until', '>', now())
+            ->orWhere('ai_tier', '!=', 'free')
+            ->paginate(20);
+
+        $aiUsageLogs = AiUsageLog::selectRaw('DATE(created_at) as date, COUNT(*) as request_count, SUM(tokens_used) as total_tokens')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return Inertia::render('Admin/AiAccess', [
+            'users' => $users,
+            'usage_logs' => $aiUsageLogs,
+            'tiers' => ['free', 'basic', 'pro', 'unlimited'],
+        ]);
+    }
+
+    public function updateUserAiTier(Request $request, User $user)
+    {
+        $request->validate([
+            'ai_tier' => 'required|in:free,basic,pro,unlimited',
+            'monthly_tokens' => 'required|integer|min:1000',
+        ]);
+
+        $user->update([
+            'ai_tier' => $request->ai_tier,
+            'ai_monthly_tokens' => $request->monthly_tokens,
+            'ai_tokens_used_this_month' => 0,
+            'ai_reset_date' => now()->endOfMonth(),
+        ]);
+
+        return back()->with('success', "User @{$user->username}'s AI tier updated to {$request->ai_tier}.");
+    }
+
+    public function grantAiAccess(Request $request, User $user)
+    {
+        $request->validate([
+            'days' => 'required|integer|min:1|max:3650',
+            'tier' => 'required|in:basic,pro',
+        ]);
+
+        $user->update([
+            'ai_access_until' => now()->addDays($request->days),
+            'ai_tier' => $request->tier,
+            'ai_monthly_tokens' => $request->tier === 'pro' ? 500000 : 100000,
+        ]);
+
+        return back()->with('success', "AI access granted to @{$user->username} for {$request->days} days.");
+    }
+
+    public function revokeAiAccess(User $user)
+    {
+        $user->update([
+            'ai_access_until' => null,
+            'ai_tier' => 'free',
+            'ai_monthly_tokens' => 0,
+            'ai_feature_advanced' => false,
+        ]);
+
+        return back()->with('success', "AI access revoked from @{$user->username}.");
+    }
+
+    public function resetAiMonthlyUsage(User $user)
+    {
+        $user->update([
+            'ai_tokens_used_this_month' => 0,
+            'ai_reset_date' => now()->addMonth()->endOfMonth(),
+        ]);
+
+        return back()->with('success', "Monthly AI usage reset for @{$user->username}.");
     }
 }
