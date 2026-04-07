@@ -8,6 +8,7 @@ use App\Models\JobListing;
 use App\Models\Community;
 use App\Models\ActivityLog;
 use App\Models\Badge;
+use App\Models\ContentReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -271,5 +272,206 @@ class AdminController extends Controller
         $name = $community->name;
         $community->delete();
         return back()->with('success', "Community '{$name}' deleted.");
+    }
+
+    // ─────────── User Moderation ───────────
+
+    public function banUser(Request $request, User $user)
+    {
+        if ($user->role === 'admin') {
+            return back()->with('error', 'Cannot ban an admin user.');
+        }
+
+        $request->validate(['reason' => 'required|string|max:500']);
+
+        $user->update([
+            'banned_at' => now(),
+            'moderation_notes' => $request->reason,
+        ]);
+
+        return back()->with('success', "User @{$user->username} has been banned.");
+    }
+
+    public function unbanUser(User $user)
+    {
+        $user->update(['banned_at' => null]);
+        return back()->with('success', "Ban lifted from @{$user->username}.");
+    }
+
+    public function suspendUser(Request $request, User $user)
+    {
+        $request->validate([
+            'days' => 'required|integer|min:1|max:365',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'suspended_until' => now()->addDays($request->days),
+            'moderation_notes' => $request->reason,
+        ]);
+
+        return back()->with('success', "User @{$user->username} suspended for {$request->days} days.");
+    }
+
+    public function warnUser(Request $request, User $user)
+    {
+        $request->validate(['reason' => 'required|string|max:500']);
+
+        $user->increment('warning_count');
+        $warningCount = $user->warning_count;
+
+        // Auto-suspend if 3+ warnings
+        if ($warningCount >= 3) {
+            $user->update(['suspended_until' => now()->addDays(7)]);
+            return back()->with('warning', "User @{$user->username} warned (count: {$warningCount}/3). Auto-suspended for 7 days.");
+        }
+
+        return back()->with('success', "User @{$user->username} warned ({$warningCount}/3).");
+    }
+
+    public function verifyUser(User $user)
+    {
+        $user->update(['is_verified_user' => true]);
+        return back()->with('success', "User @{$user->username} verified.");
+    }
+
+    // ─────────── Content Reports ───────────
+
+    public function reports(Request $request)
+    {
+        $query = ContentReport::with('reporter', 'admin')
+            ->orderByDesc('created_at');
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->reason) {
+            $query->where('reason', $request->reason);
+        }
+
+        $reports = $query->paginate(20)->withQueryString();
+
+        return Inertia::render('Admin/Reports', [
+            'reports' => $reports,
+            'filters' => $request->only(['status', 'reason']),
+        ]);
+    }
+
+    public function reviewReport(Request $request, ContentReport $report)
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:dismissed,warning,suspend,ban,delete',
+            'notes' => 'required|string|max:500',
+        ]);
+
+        $report->update([
+            'status' => 'reviewed',
+            'admin_id' => auth()->id(),
+            'admin_notes' => $validated['notes'],
+            'action_taken' => $validated['action'],
+        ]);
+
+        // Take action on the reported user or content
+        if ($report->content_type === 'user' && in_array($validated['action'], ['warning', 'suspend', 'ban'])) {
+            $user = User::find($report->content_id);
+            if ($user) {
+                match ($validated['action']) {
+                    'warning' => $user->increment('warning_count'),
+                    'suspend' => $user->update(['suspended_until' => now()->addDays(7)]),
+                    'ban' => $user->update(['banned_at' => now()]),
+                };
+            }
+        } elseif ($validated['action'] === 'delete') {
+            // Delete the reported content
+            $content = $this->getReportedContent($report);
+            $content?->delete();
+        }
+
+        return back()->with('success', 'Report reviewed and action taken.');
+    }
+
+    private function getReportedContent(ContentReport $report)
+    {
+        return match ($report->content_type) {
+            'event' => Event::find($report->content_id),
+            'job' => JobListing::find($report->content_id),
+            'marketplace' => null, // Add marketplace model when available
+            'message' => null, // Add message handling
+            default => null,
+        };
+    }
+
+    // ─────────── Content Approval ───────────
+
+    public function approvalQueue(Request $request)
+    {
+        $type = $request->type ?? 'all'; // all, events, jobs, communities
+
+        $pendingEvents = Event::where('approval_status', 'pending')->count();
+        $pendingJobs = JobListing::where('approval_status', 'pending')->count();
+
+        $queue = [];
+
+        if ($type === 'all' || $type === 'events') {
+            $queue['events'] = Event::where('approval_status', 'pending')
+                ->with('user')
+                ->paginate(20);
+        }
+
+        if ($type === 'all' || $type === 'jobs') {
+            $queue['jobs'] = JobListing::where('approval_status', 'pending')
+                ->with('user')
+                ->paginate(20);
+        }
+
+        return Inertia::render('Admin/ApprovalQueue', [
+            'queue' => $queue,
+            'pendingCounts' => [
+                'events' => $pendingEvents,
+                'jobs' => $pendingJobs,
+            ],
+        ]);
+    }
+
+    public function approveContent(Request $request, $type, $id)
+    {
+        $request->validate(['notes' => 'nullable|string|max:500']);
+
+        match ($type) {
+            'event' => Event::find($id)?->update([
+                'approval_status' => 'approved',
+                'approved_by' => auth()->id(),
+                'is_approved' => true,
+            ]),
+            'job' => JobListing::find($id)?->update([
+                'approval_status' => 'approved',
+                'approved_by' => auth()->id(),
+            ]),
+        };
+
+        return back()->with('success', ucfirst($type) . ' approved.');
+    }
+
+    public function rejectContent(Request $request, $type, $id)
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        match ($type) {
+            'event' => Event::find($id)?->update([
+                'approval_status' => 'rejected',
+                'approved_by' => auth()->id(),
+                'rejection_reason' => $validated['reason'],
+            ]),
+            'job' => JobListing::find($id)?->update([
+                'approval_status' => 'rejected',
+                'approved_by' => auth()->id(),
+                'rejection_reason' => $validated['reason'],
+            ]),
+        };
+
+        return back()->with('success', ucfirst($type) . ' rejected.');
     }
 }

@@ -80,6 +80,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/grant-ai', [\App\Http\Controllers\AdminController::class, 'grantAiAccess'])->name('users.grant-ai');
         Route::post('/users/{user}/revoke-ai', [\App\Http\Controllers\AdminController::class, 'revokeAiAccess'])->name('users.revoke-ai');
         Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'deleteUser'])->name('users.delete');
+        Route::post('/users/{user}/ban', [\App\Http\Controllers\AdminController::class, 'banUser'])->name('users.ban');
+        Route::post('/users/{user}/unban', [\App\Http\Controllers\AdminController::class, 'unbanUser'])->name('users.unban');
+        Route::post('/users/{user}/suspend', [\App\Http\Controllers\AdminController::class, 'suspendUser'])->name('users.suspend');
+        Route::post('/users/{user}/warn', [\App\Http\Controllers\AdminController::class, 'warnUser'])->name('users.warn');
+        Route::post('/users/{user}/verify', [\App\Http\Controllers\AdminController::class, 'verifyUser'])->name('users.verify');
 
         // Events
         Route::get('/events', [\App\Http\Controllers\AdminController::class, 'events'])->name('events');
@@ -95,6 +100,15 @@ Route::middleware('auth')->group(function () {
         // Communities
         Route::get('/communities', [\App\Http\Controllers\AdminController::class, 'communities'])->name('communities');
         Route::delete('/communities/{community}', [\App\Http\Controllers\AdminController::class, 'deleteCommunity'])->name('communities.delete');
+
+        // Moderation & Reports
+        Route::get('/reports', [\App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
+        Route::post('/reports/{report}/review', [\App\Http\Controllers\AdminController::class, 'reviewReport'])->name('reports.review');
+
+        // Content Approval Queue
+        Route::get('/approval-queue', [\App\Http\Controllers\AdminController::class, 'approvalQueue'])->name('approval-queue');
+        Route::post('/approve/{type}/{id}', [\App\Http\Controllers\AdminController::class, 'approveContent'])->name('approve');
+        Route::post('/reject/{type}/{id}', [\App\Http\Controllers\AdminController::class, 'rejectContent'])->name('reject');
     });
 });
 
