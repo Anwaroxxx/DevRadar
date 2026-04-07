@@ -46,7 +46,7 @@ export default function HackerLayout({ children }) {
     // Secondary nav links - in "More" dropdown
     const secondaryNavLinks = [
         { href: '/leaderboard',  label: 'Leaderboard',  icon: Trophy },
-        { href: '/chat',         label: 'Chat',         icon: MessageSquare },
+        { href: '/chat',         label: 'Chat',         icon: MessageSquare, badge: user?.unread_dm_count || 0 },
         { href: '/ai/chat',      label: 'AI Hub',       icon: Cpu, pulse: true },
         { href: '/marketplace',  label: 'Marketplace',  icon: Zap, glow: true },
     ];
@@ -110,6 +110,11 @@ export default function HackerLayout({ children }) {
                                         >
                                             <link.icon className={`w-4 h-4 ${link.pulse ? 'animate-pulse' : ''}`} />
                                             <span>{link.label}</span>
+                                            {!!link.badge && link.badge > 0 && (
+                                                <span className="ml-auto min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center text-[10px] font-black bg-primary text-black border border-primary">
+                                                    {link.badge > 99 ? '99+' : link.badge}
+                                                </span>
+                                            )}
                                         </Link>
                                     ))}
                                 </div>
@@ -194,6 +199,11 @@ export default function HackerLayout({ children }) {
                                     >
                                         <link.icon className={`w-4 h-4 shrink-0 ${link.pulse ? 'animate-pulse' : ''}`} />
                                         <span>{link.label}</span>
+                                        {link.href === '/chat' && user?.unread_dm_count > 0 && (
+                                            <span className="ml-auto min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center text-[10px] font-black bg-primary text-black border border-primary">
+                                                {user.unread_dm_count > 99 ? '99+' : user.unread_dm_count}
+                                            </span>
+                                        )}
                                     </Link>
                                 ))}
                                 <div className="border-t border-border mt-4 pt-4 flex items-center justify-between font-mono text-[9px] text-muted-foreground uppercase">

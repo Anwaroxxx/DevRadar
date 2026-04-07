@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContentStatusMail;
 use App\Models\JobListing;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Mail;
 
 class JobController extends Controller
 {
@@ -12,6 +14,7 @@ class JobController extends Controller
     {
         $query = JobListing::with('user')
             ->where('is_active', true)
+            ->where('approval_status', 'approved')
             ->orderByDesc('created_at');
 
         if ($request->city) $query->where('city', $request->city);
@@ -48,8 +51,16 @@ class JobController extends Controller
             'salary_range'=> 'nullable|string',
         ]);
 
-        $job = $request->user()->jobListings()->create($data);
+        $job = $request->user()->jobListings()->create(array_merge($data, [
+            'approval_status' => 'pending',
+        ]));
         $request->user()->awardXp(50, 'posted_job', "Posted job: {$job->title}", $job);
+
+        if (!empty($request->user()->email)) {
+            Mail::to($request->user()->email)->queue(
+                new ContentStatusMail('job', $job->title, 'pending')
+            );
+        }
 
         return redirect()->route('jobs.index')->with('success', '+50 XP earned for posting a job!');
     }

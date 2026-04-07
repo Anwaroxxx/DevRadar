@@ -5,32 +5,16 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Event;
-use App\Models\JobListing;
-use App\Models\Community;
 use App\Models\Tag;
 use App\Models\Skill;
-use App\Models\Badge;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // ✅ Seed Badges safely
-        $badges = [
-            ['name'=>'Newcomer',     'icon'=>'🌱','description'=>'Just joined DevRadar','requirement'=>'register','xp_threshold'=>0],
-            ['name'=>'Explorer',     'icon'=>'🔭','description'=>'Earned 100 XP','requirement'=>'xp_100','xp_threshold'=>100],
-            ['name'=>'Contributor',  'icon'=>'⚡','description'=>'Earned 300 XP','requirement'=>'xp_300','xp_threshold'=>300],
-            ['name'=>'Event Master', 'icon'=>'🎯','description'=>'Earned 500 XP','requirement'=>'xp_500','xp_threshold'=>500],
-            ['name'=>'Legend',       'icon'=>'🏆','description'=>'Earned 1000 XP','requirement'=>'xp_1000','xp_threshold'=>1000],
-        ];
+        $this->call(BadgeSeeder::class);
 
-        foreach ($badges as $badge) {
-            Badge::firstOrCreate(['name' => $badge['name']], $badge);
-        }
-        $this->command->info('✅ Badges seeded');
-
-        // ✅ Seed Tags safely
+        // Seed Tags
         $tagNames  = [
             'React','Laravel','Python','JavaScript','AI','Machine Learning',
             'DevOps','Node.js','Vue.js','Flutter','Blockchain','Cybersecurity',
@@ -49,7 +33,7 @@ class DatabaseSeeder extends Seeder
                 ['color' => $tagColors[$i % count($tagColors)]]
             );
         }
-        $this->command->info('✅ Tags seeded');
+        $this->command->info('Tags seeded.');
 
         $skills = [
             'React','Vue.js','Laravel','Django','FastAPI','Node.js',
@@ -60,7 +44,7 @@ class DatabaseSeeder extends Seeder
         foreach ($skills as $skill) {
             Skill::firstOrCreate(['name' => $skill]);
         }
-        $this->command->info('✅ Skills seeded');
+        $this->command->info('Skills seeded.');
 
         $admin = User::firstOrCreate(
             ['username' => 'anwar_admin'],
@@ -75,8 +59,8 @@ class DatabaseSeeder extends Seeder
                 'location'          => 'Casablanca, Morocco',
             ]
         );
-        $this->command->info("✅ Admin user created: {$admin->email}");
+        $this->command->info("Admin user created: {$admin->email}");
 
-        $this->command->info('✅ DevRadar database seeded successfully!');
+        $this->command->info('DevRadar database seeded successfully.');
     }
 }

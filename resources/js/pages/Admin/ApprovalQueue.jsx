@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, AlertCircle, MessageCircle } from 'lucide-react';
+import { CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 
 export default function ApprovalQueue({ queue, pendingCounts = {} }) {
     const [selectedType, setSelectedType] = useState('events');
@@ -48,7 +48,7 @@ export default function ApprovalQueue({ queue, pendingCounts = {} }) {
 
                 {/* Tabs */}
                 <div className="flex gap-2">
-                    {['events', 'jobs'].map(type => (
+                    {['events', 'jobs', 'communities'].map(type => (
                         <button
                             key={type}
                             onClick={() => setSelectedType(type)}
@@ -81,12 +81,15 @@ export default function ApprovalQueue({ queue, pendingCounts = {} }) {
                                 {/* Item Header */}
                                 <div className="flex items-start justify-between mb-4">
                                     <div>
-                                        <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+                                        <h3 className="font-bold text-lg mb-1">
+                                            {selectedType === 'communities' ? item.name : item.title}
+                                        </h3>
                                         <div className="text-xs text-muted-foreground space-y-0.5">
                                             <div>Posted by: <span className="text-primary">@{item.user.username}</span></div>
                                             <div>{new Date(item.created_at).toLocaleDateString()}</div>
                                             {selectedType === 'events' && <div>Date: {new Date(item.event_date).toLocaleDateString()}</div>}
                                             {selectedType === 'jobs' && <div>Company: {item.company}</div>}
+                                            {selectedType === 'communities' && <div>Platform: {item.platform}</div>}
                                         </div>
                                     </div>
                                     <span className="text-[10px] border border-yellow-500 text-yellow-500 bg-yellow-500/10 px-2 py-1 font-bold">
@@ -124,12 +127,28 @@ export default function ApprovalQueue({ queue, pendingCounts = {} }) {
                                                 <p className="text-primary font-bold">{item.city}</p>
                                             </div>
                                             <div>
-                                                <span className="text-muted-foreground">Level</span>
-                                                <p className="text-primary font-bold">{item.level}</p>
+                                                <span className="text-muted-foreground">Type</span>
+                                                <p className="text-primary font-bold">{item.type}</p>
                                             </div>
                                             <div>
-                                                <span className="text-muted-foreground">Type</span>
-                                                <p className="text-primary font-bold">{item.job_type}</p>
+                                                <span className="text-muted-foreground">Remote</span>
+                                                <p className="text-primary font-bold">{item.is_remote ? 'Yes' : 'No'}</p>
+                                            </div>
+                                        </>
+                                    )}
+                                    {selectedType === 'communities' && (
+                                        <>
+                                            <div>
+                                                <span className="text-muted-foreground">Category</span>
+                                                <p className="text-primary font-bold">{item.category}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">City</span>
+                                                <p className="text-primary font-bold">{item.city || '—'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-muted-foreground">Members</span>
+                                                <p className="text-primary font-bold">{item.member_count ?? 0}</p>
                                             </div>
                                         </>
                                     )}

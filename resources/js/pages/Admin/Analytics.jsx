@@ -80,23 +80,23 @@ export default function AdminAnalytics({ summary, metrics, user_growth }) {
                     <h2 className="font-bold text-lg">Platform Metrics</h2>
                     <div className="space-y-2 text-sm">
                         <p className="text-muted-foreground">
-                            <span className="font-bold text-primary">📊 Daily Active Users:</span> Track user engagement across the platform
+                            <span className="font-bold text-primary">Daily Active Users:</span> Track user engagement across the platform
                         </p>
                         <p className="text-muted-foreground">
-                            <span className="font-bold text-primary">👥 New Signups:</span> Monitor user acquisition trends
+                            <span className="font-bold text-primary">New Signups:</span> Monitor user acquisition trends
                         </p>
                         <p className="text-muted-foreground">
-                            <span className="font-bold text-primary">📅 Events Created:</span> Measure community event activity
+                            <span className="font-bold text-primary">Events Created:</span> Measure community event activity
                         </p>
                         <p className="text-muted-foreground">
-                            <span className="font-bold text-primary">💼 Jobs Posted:</span> Track marketplace opportunities
+                            <span className="font-bold text-primary">Jobs Posted:</span> Track marketplace opportunities
                         </p>
                     </div>
                 </div>
 
                 {/* Data Info */}
                 <div className="border border-yellow-500/30 bg-yellow-500/5 p-4 text-xs text-muted-foreground">
-                    <span className="font-bold text-yellow-500">ℹ️ Note:</span> Metrics are aggregated daily. Real-time analytics require a dedicated analytics provider integration.
+                    <span className="font-bold text-yellow-500">Note:</span> Metrics are aggregated daily. Real-time analytics require a dedicated analytics provider integration.
                 </div>
             </div>
         </HackerLayout>

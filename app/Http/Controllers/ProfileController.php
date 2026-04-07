@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Badge;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -14,14 +16,42 @@ class ProfileController extends Controller
             ? User::where('username', $username)->firstOrFail()
             : $request->user();
 
-        $user->load(['skills', 'badges', 'savedEvents.tags', 'activityLogs' => function ($q) {
-            $q->orderByDesc('created_at')->limit(20);
-        }]);
+        $user->load([
+            'skills',
+            'savedEvents.tags',
+            'activityLogs' => function ($q) {
+                $q->orderByDesc('created_at')->limit(20);
+            },
+        ]);
+
+        if ($request->user()?->id === $user->id) {
+            $user->checkBadges();
+        }
+
+        $user->load([
+            'badges' => fn ($q) => $q->orderBy('track')->orderBy('level'),
+        ]);
 
         $user->loadCount(['followers', 'following']);
 
+        $achievementCatalog = Badge::query()
+            ->orderBy('track')
+            ->orderBy('level')
+            ->get()
+            ->map(fn (Badge $b) => [
+                'id' => $b->id,
+                'slug' => $b->slug,
+                'name' => $b->name,
+                'description' => $b->description,
+                'track' => $b->track,
+                'level' => (int) $b->level,
+                'icon_key' => $b->icon_key ?: 'Award',
+                'earned' => $user->badges->contains('id', $b->id),
+            ]);
+
         return Inertia::render('Profile/Show', [
             'profileUser' => $user,
+            'achievementCatalog' => $achievementCatalog,
             'isOwnProfile' => $request->user()?->id === $user->id,
             'isFollowing' => $request->user() ? $request->user()->isFollowing($user) : false,
         ]);
@@ -145,6 +175,13 @@ class ProfileController extends Controller
     public function removeAvatar(Request $request)
     {
         $user = $request->user();
+
+        // Best-effort delete of previously stored avatar file (if we own it).
+        if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
+            $publicPath = ltrim(substr($user->avatar, strlen('/storage/')), '/'); // e.g. avatars/foo.jpg
+            Storage::disk('public')->delete($publicPath);
+        }
+
         $user->update(['avatar' => null]);
         return back()->with('success', 'Avatar removed successfully.');
     }

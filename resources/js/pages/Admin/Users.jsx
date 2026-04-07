@@ -106,9 +106,9 @@ export default function AdminUsers({ users, filters }) {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="space-y-1">
-                                            {user.banned_at && <div className="text-[10px] text-red-500 border border-red-500/30 px-1 py-0.5 bg-red-500/10 font-bold">🚫 BANNED</div>}
-                                            {user.suspended_until && new Date(user.suspended_until) > new Date() && <div className="text-[10px] text-yellow-500 border border-yellow-500/30 px-1 py-0.5 bg-yellow-500/10 font-bold">⏸ SUSPENDED</div>}
-                                            {user.is_verified_user && <div className="text-[10px] text-green-500 border border-green-500/30 px-1 py-0.5 bg-green-500/10 font-bold">✓ VERIFIED</div>}
+                                            {user.banned_at && <div className="text-[10px] text-red-500 border border-red-500/30 px-1 py-0.5 bg-red-500/10 font-bold inline-flex items-center gap-1"><Ban className="w-3 h-3" /> BANNED</div>}
+                                            {user.suspended_until && new Date(user.suspended_until) > new Date() && <div className="text-[10px] text-yellow-500 border border-yellow-500/30 px-1 py-0.5 bg-yellow-500/10 font-bold">SUSPENDED</div>}
+                                            {user.is_verified_user && <div className="text-[10px] text-green-500 border border-green-500/30 px-1 py-0.5 bg-green-500/10 font-bold inline-flex items-center gap-1"><Check className="w-3 h-3" /> VERIFIED</div>}
                                             {!user.banned_at && !user.suspended_until && !user.is_verified_user && <div className="text-[10px] text-muted-foreground">ACTIVE</div>}
                                         </div>
                                     </td>
@@ -170,10 +170,10 @@ export default function AdminUsers({ users, filters }) {
                                         onChange={e => setModerationForm({ ...moderationForm, action: e.target.value })}
                                         className="w-full bg-black border border-primary/30 p-2 text-sm font-mono mt-1 focus:outline-none focus:border-primary"
                                     >
-                                        <option value="warn">⚠️ WARN (3 strikes = auto-suspend)</option>
-                                        <option value="suspend">⏸ SUSPEND</option>
-                                        <option value="ban">🚫 BAN</option>
-                                        <option value="verify">✓ VERIFY</option>
+                                        <option value="warn">WARN (3 strikes = auto-suspend)</option>
+                                        <option value="suspend">SUSPEND</option>
+                                        <option value="ban">BAN</option>
+                                        <option value="verify">VERIFY</option>
                                     </select>
                                 </div>
 

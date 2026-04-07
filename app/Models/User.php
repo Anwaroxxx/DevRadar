@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AchievementSync;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -113,10 +114,6 @@ class User extends Authenticatable
 
     public function checkBadges(): void
     {
-        $xp = $this->fresh()->xp;
-        $badges = Badge::where('xp_threshold', '<=', $xp)->get();
-        foreach ($badges as $badge) {
-            $this->badges()->syncWithoutDetaching([$badge->id]);
-        }
+        AchievementSync::sync($this);
     }
 }

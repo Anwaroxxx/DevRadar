@@ -58,6 +58,8 @@ class ChatController extends Controller
             'content' => $request->content,
         ]);
 
+        Auth::user()?->checkBadges();
+
         return back();
     }
 
@@ -81,7 +83,8 @@ class ChatController extends Controller
     private function getChatUsers()
     {
         $userId = Auth::id();
-        return User::whereIn('id', function($query) use ($userId) {
+
+        $chatUsers = User::whereIn('id', function($query) use ($userId) {
             $query->select('receiver_id')
                 ->from('messages')
                 ->where('sender_id', $userId)
@@ -93,27 +96,55 @@ class ChatController extends Controller
                 );
         })
         ->where('id', '!=', $userId)
-        ->get()
-        ->map(function($u) use ($userId) {
-            $last = Message::where(function($q) use ($userId, $u) {
-                    $q->where('sender_id', $userId)->where('receiver_id', $u->id);
+        ->select(['id', 'name', 'username', 'avatar'])
+        ->selectSub(
+            Message::select('content')
+                ->where(function ($q) use ($userId) {
+                    $q->whereColumn('sender_id', 'users.id')
+                        ->where('receiver_id', $userId);
                 })
-                ->orWhere(function($q) use ($userId, $u) {
-                    $q->where('sender_id', $u->id)->where('receiver_id', $userId);
+                ->orWhere(function ($q) use ($userId) {
+                    $q->where('sender_id', $userId)
+                        ->whereColumn('receiver_id', 'users.id');
                 })
-                ->latest()
-                ->first();
+                ->latest('created_at')
+                ->limit(1),
+            'last_message'
+        )
+        ->selectSub(
+            Message::select('created_at')
+                ->where(function ($q) use ($userId) {
+                    $q->whereColumn('sender_id', 'users.id')
+                        ->where('receiver_id', $userId);
+                })
+                ->orWhere(function ($q) use ($userId) {
+                    $q->where('sender_id', $userId)
+                        ->whereColumn('receiver_id', 'users.id');
+                })
+                ->latest('created_at')
+                ->limit(1),
+            'last_message_time'
+        )
+        ->selectSub(
+            Message::selectRaw('COUNT(*)')
+                ->whereColumn('sender_id', 'users.id')
+                ->where('receiver_id', $userId)
+                ->whereNull('read_at'),
+            'unread_count'
+        )
+        ->orderByDesc('last_message_time')
+        ->get();
 
+        return $chatUsers->map(function ($u) {
             return [
                 'id' => $u->id,
                 'name' => $u->name,
                 'username' => $u->username,
                 'avatar' => $u->avatar,
-                'last_message' => $last?->content ?? '',
-                'last_message_time' => $last?->created_at ?? null,
+                'last_message' => $u->last_message ?? '',
+                'last_message_time' => $u->last_message_time,
+                'unread_count' => (int) ($u->unread_count ?? 0),
             ];
-        })
-        ->sortByDesc('last_message_time')
-        ->values();
+        })->values();
     }
 }

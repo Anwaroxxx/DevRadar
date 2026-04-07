@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContentStatusMail;
 use App\Models\Community;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Mail;
 
 class CommunityController extends Controller
 {
@@ -12,6 +14,7 @@ class CommunityController extends Controller
     {
         $query = Community::with('user')
             ->withCount('followers')
+            ->where('approval_status', 'approved')
             ->orderByDesc('member_count');
 
         if ($request->category) $query->where('category', $request->category);
@@ -41,8 +44,16 @@ class CommunityController extends Controller
             'category'    => 'required|string',
         ]);
 
-        $community = $request->user()->communities()->create($data);
+        $community = $request->user()->communities()->create(array_merge($data, [
+            'approval_status' => 'pending',
+        ]));
         $request->user()->awardXp(20, 'joined_community', "Created community: {$community->name}", $community);
+
+        if (!empty($request->user()->email)) {
+            Mail::to($request->user()->email)->queue(
+                new ContentStatusMail('community', $community->name, 'pending')
+            );
+        }
 
         return redirect()->route('communities.index')->with('success', '+20 XP earned!');
     }

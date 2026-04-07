@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Message;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,13 +36,19 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $unreadDmCount = $user
+            ? Message::where('receiver_id', $user->id)->whereNull('read_at')->count()
+            : 0;
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user() ? array_merge($request->user()->toArray(), [
-                    'is_admin'       => $request->user()->isAdmin(),
-                    'has_ai_access'  => $request->user()->has_ai_access,
+                'user' => $user ? array_merge($user->toArray(), [
+                    'is_admin'        => $user->isAdmin(),
+                    'has_ai_access'   => $user->has_ai_access,
+                    'unread_dm_count' => $unreadDmCount,
                 ]) : null,
             ],
             'flash' => [

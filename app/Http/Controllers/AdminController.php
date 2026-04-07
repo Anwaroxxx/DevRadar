@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContentStatusMail;
 use App\Models\User;
 use App\Models\Event;
 use App\Models\JobListing;
@@ -19,6 +20,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -31,10 +33,18 @@ class AdminController extends Controller
         $totalJobs        = JobListing::count();
         $totalCommunities = Community::count();
         $totalXp          = User::sum('xp');
-        $pendingEvents    = Event::where('is_approved', false)->count();
+        $pendingEvents    = Event::where('approval_status', 'pending')->count();
+        $pendingJobs      = JobListing::where('approval_status', 'pending')->count();
+        $pendingCommunities = Community::where('approval_status', 'pending')->count();
         $activeJobs       = JobListing::where('is_active', true)->count();
         $aiAccessUsers    = User::whereNotNull('ai_access_until')
                               ->where('ai_access_until', '>', now())->count();
+        $openReports      = ContentReport::where('status', 'pending')->count();
+
+        $recentAuditLogs = AuditLog::with('admin')
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
 
         // User growth data for chart (last 12 months) - database-agnostic
         $userGrowth = User::where('created_at', '>=', now()->subMonths(12))
@@ -82,8 +92,11 @@ class AdminController extends Controller
                 'totalCommunities' => $totalCommunities,
                 'totalXp'          => $totalXp,
                 'pendingEvents'    => $pendingEvents,
+                'pendingJobs'      => $pendingJobs,
+                'pendingCommunities' => $pendingCommunities,
                 'activeJobs'       => $activeJobs,
                 'aiAccessUsers'    => $aiAccessUsers,
+                'openReports'      => $openReports,
             ],
             'recentUsers'   => $recentUsers,
             'recentEvents'  => $recentEvents,
@@ -92,6 +105,7 @@ class AdminController extends Controller
             'userGrowth'    => $userGrowth,
             'xpByRole'      => $xpByRole,
             'eventsByCategory' => $eventsByCategory,
+            'recentAuditLogs' => $recentAuditLogs,
         ]);
     }
 
@@ -159,9 +173,11 @@ class AdminController extends Controller
         }
 
         if ($request->status === 'pending') {
-            $query->where('is_approved', false);
+            $query->where('approval_status', 'pending');
         } elseif ($request->status === 'approved') {
-            $query->where('is_approved', true);
+            $query->where('approval_status', 'approved');
+        } elseif ($request->status === 'rejected') {
+            $query->where('approval_status', 'rejected');
         }
 
         if ($request->category) {
@@ -178,13 +194,53 @@ class AdminController extends Controller
 
     public function approveEvent(Event $event)
     {
-        $event->update(['is_approved' => true]);
+        $event->update([
+            'approval_status' => 'approved',
+            'approved_by' => auth()->id(),
+            'is_approved' => true,
+        ]);
+
+        if (!empty($event->user?->email)) {
+            Mail::to($event->user->email)->queue(
+                new ContentStatusMail('event', $event->title, 'approved')
+            );
+        }
+
+        AuditLog::log(
+            auth()->id(),
+            'approve_event',
+            'event',
+            $event->id,
+            ['approval_status' => 'approved'],
+            "Approved event '{$event->title}'"
+        );
+
         return back()->with('success', "Event '{$event->title}' approved.");
     }
 
     public function rejectEvent(Event $event)
     {
-        $event->update(['is_approved' => false]);
+        $event->update([
+            'approval_status' => 'rejected',
+            'approved_by' => auth()->id(),
+            'is_approved' => false,
+        ]);
+
+        if (!empty($event->user?->email)) {
+            Mail::to($event->user->email)->queue(
+                new ContentStatusMail('event', $event->title, 'rejected')
+            );
+        }
+
+        AuditLog::log(
+            auth()->id(),
+            'reject_event',
+            'event',
+            $event->id,
+            ['approval_status' => 'rejected'],
+            "Rejected event '{$event->title}'"
+        );
+
         return back()->with('success', "Event '{$event->title}' rejected.");
     }
 
@@ -212,6 +268,12 @@ class AdminController extends Controller
             $query->where('is_active', true);
         } elseif ($request->status === 'inactive') {
             $query->where('is_active', false);
+        } elseif ($request->status === 'pending') {
+            $query->where('approval_status', 'pending');
+        } elseif ($request->status === 'approved') {
+            $query->where('approval_status', 'approved');
+        } elseif ($request->status === 'rejected') {
+            $query->where('approval_status', 'rejected');
         }
 
         $jobs = $query->paginate(20)->withQueryString();
@@ -246,11 +308,19 @@ class AdminController extends Controller
             $query->where('name', 'LIKE', "%{$request->search}%");
         }
 
+        if ($request->status === 'pending') {
+            $query->where('approval_status', 'pending');
+        } elseif ($request->status === 'approved') {
+            $query->where('approval_status', 'approved');
+        } elseif ($request->status === 'rejected') {
+            $query->where('approval_status', 'rejected');
+        }
+
         $communities = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/Communities', [
             'communities' => $communities,
-            'filters'     => $request->only(['search']),
+            'filters'     => $request->only(['search', 'status']),
         ]);
     }
 
@@ -397,6 +467,7 @@ class AdminController extends Controller
 
         $pendingEvents = Event::where('approval_status', 'pending')->count();
         $pendingJobs = JobListing::where('approval_status', 'pending')->count();
+        $pendingCommunities = Community::where('approval_status', 'pending')->count();
 
         $queue = [];
 
@@ -412,11 +483,18 @@ class AdminController extends Controller
                 ->paginate(20);
         }
 
+        if ($type === 'all' || $type === 'communities') {
+            $queue['communities'] = Community::where('approval_status', 'pending')
+                ->with('user')
+                ->paginate(20);
+        }
+
         return Inertia::render('Admin/ApprovalQueue', [
             'queue' => $queue,
             'pendingCounts' => [
                 'events' => $pendingEvents,
                 'jobs' => $pendingJobs,
+                'communities' => $pendingCommunities,
             ],
         ]);
     }
@@ -424,18 +502,46 @@ class AdminController extends Controller
     public function approveContent(Request $request, $type, $id)
     {
         $request->validate(['notes' => 'nullable|string|max:500']);
+        $notes = $request->input('notes');
+
+        $content = match ($type) {
+            'event' => Event::find($id),
+            'job' => JobListing::find($id),
+            'community' => Community::find($id),
+            default => null,
+        };
 
         match ($type) {
-            'event' => Event::find($id)?->update([
+            'event' => $content?->update([
                 'approval_status' => 'approved',
                 'approved_by' => auth()->id(),
                 'is_approved' => true,
             ]),
-            'job' => JobListing::find($id)?->update([
+            'job' => $content?->update([
+                'approval_status' => 'approved',
+                'approved_by' => auth()->id(),
+            ]),
+            'community' => $content?->update([
                 'approval_status' => 'approved',
                 'approved_by' => auth()->id(),
             ]),
         };
+
+        if ($content && !empty($content->user?->email)) {
+            $title = $type === 'community' ? $content->name : $content->title;
+            Mail::to($content->user->email)->queue(
+                new ContentStatusMail($type, $title, 'approved')
+            );
+        }
+
+        AuditLog::log(
+            auth()->id(),
+            'approve_content',
+            $type,
+            $id,
+            ['approval_status' => 'approved', 'notes' => $notes],
+            'Approved ' . $type . ' #' . $id
+        );
 
         return back()->with('success', ucfirst($type) . ' approved.');
     }
@@ -446,18 +552,47 @@ class AdminController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
+        $content = match ($type) {
+            'event' => Event::find($id),
+            'job' => JobListing::find($id),
+            'community' => Community::find($id),
+            default => null,
+        };
+
         match ($type) {
-            'event' => Event::find($id)?->update([
+            'event' => $content?->update([
+                'approval_status' => 'rejected',
+                'approved_by' => auth()->id(),
+                'rejection_reason' => $validated['reason'],
+                'is_approved' => false,
+            ]),
+            'job' => $content?->update([
                 'approval_status' => 'rejected',
                 'approved_by' => auth()->id(),
                 'rejection_reason' => $validated['reason'],
             ]),
-            'job' => JobListing::find($id)?->update([
+            'community' => $content?->update([
                 'approval_status' => 'rejected',
                 'approved_by' => auth()->id(),
                 'rejection_reason' => $validated['reason'],
             ]),
         };
+
+        if ($content && !empty($content->user?->email)) {
+            $title = $type === 'community' ? $content->name : $content->title;
+            Mail::to($content->user->email)->queue(
+                new ContentStatusMail($type, $title, 'rejected', $validated['reason'])
+            );
+        }
+
+        AuditLog::log(
+            auth()->id(),
+            'reject_content',
+            $type,
+            $id,
+            ['approval_status' => 'rejected', 'reason' => $validated['reason']],
+            'Rejected ' . $type . ' #' . $id
+        );
 
         return back()->with('success', ucfirst($type) . ' rejected.');
     }

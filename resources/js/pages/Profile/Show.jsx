@@ -1,14 +1,42 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
-import { Terminal, MapPin, Calendar, Users, Star, Award, Edit, Zap, Briefcase, Hash, MessageSquare, UserPlus } from 'lucide-react';
+import { Terminal, MapPin, Calendar, Users, Star, Award, Edit, Zap, Briefcase, Hash, MessageSquare, UserPlus, Lock } from 'lucide-react';
 import TechIcon from '@/components/TechIcon';
+import AchievementIcon from '@/components/AchievementIcon';
 import React from 'react';
 
-export default function ProfileShow({ profileUser, isOwnProfile }) {
+const TRACK_LABELS = {
+    welcome: 'Onboarding',
+    signal: 'Dev signal',
+    cartographer: 'Events',
+    operator: 'Jobs',
+    founder: 'Communities built',
+    anchor: 'Communities joined',
+    magnet: 'Followers',
+    web: 'Following',
+    archivist: 'Saved events',
+    relay: 'Messages',
+    pulse: 'Attendance',
+};
+
+export default function ProfileShow({ profileUser, isOwnProfile, achievementCatalog = [] }) {
     const { auth } = usePage().props;
 
     const [activeTab, setActiveTab] = React.useState('activity');
+
+    const tracksGrouped = React.useMemo(() => {
+        const map = new Map();
+        for (const row of achievementCatalog) {
+            const t = row.track || 'other';
+            if (!map.has(t)) map.set(t, []);
+            map.get(t).push(row);
+        }
+        return Array.from(map.entries()).sort((a, b) => (a[0] || '').localeCompare(b[0] || ''));
+    }, [achievementCatalog]);
+
+    const earnedCount = achievementCatalog.filter((r) => r.earned).length;
+    const totalCount = achievementCatalog.length;
 
     return (
         <HackerLayout>
@@ -140,24 +168,61 @@ export default function ProfileShow({ profileUser, isOwnProfile }) {
                             )}
                         </div>
 
-                        {/* Badges */}
-                        <div className="bg-card border border-primary/30 p-6 relative">
-                            <h3 className="text-xs font-black border-b border-border pb-2 mb-4 uppercase flex items-center gap-2 tracking-widest text-primary">
-                                 <Award className="w-3 h-3" /> ACHIEVEMENTS
+                        {/* Achievements (leveled tracks, Lucide icons) */}
+                        <div className="bg-card border border-primary/30 p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/[0.04] rounded-full blur-2xl pointer-events-none" />
+                            <h3 className="text-xs font-black border-b border-border pb-2 mb-3 uppercase flex items-center justify-between gap-2 tracking-widest text-primary">
+                                <span className="flex items-center gap-2"><Award className="w-3 h-3" /> Achievements</span>
+                                <span className="text-[10px] font-mono text-muted-foreground normal-case">
+                                    {earnedCount}/{totalCount}
+                                </span>
                             </h3>
-                            {profileUser.badges?.length > 0 ? (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {profileUser.badges.map(badge => (
-                                        <div key={badge.id} className="text-center p-2 border border-border hover:border-primary/50 bg-black/40 group relative overflow-hidden" title={badge.description}>
-                                            <div className="text-2xl mb-1 grayscale group-hover:grayscale-0 transition-all scale-90 group-hover:scale-100 z-10 relative">{badge.icon}</div>
-                                            <div className="text-[8px] font-black font-mono text-muted-foreground group-hover:text-primary truncate uppercase leading-none">
-                                                {badge.name}
-                                            </div>
+                            <p className="text-[10px] font-mono text-muted-foreground mb-4 leading-relaxed">
+                                Level up by shipping events, jobs, communities, DMs, saves, and showing up consistently.
+                            </p>
+                            <div className="space-y-5 max-h-[520px] overflow-y-auto pr-1 [scrollbar-width:thin]">
+                                {tracksGrouped.map(([track, rows]) => (
+                                    <div key={track} className="border border-border/60 bg-black/30 p-3">
+                                        <div className="flex items-center justify-between mb-2 gap-2">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-primary/90">
+                                                {TRACK_LABELS[track] || track}
+                                            </span>
+                                            <span className="text-[9px] font-mono text-muted-foreground">
+                                                {rows.filter((r) => r.earned).length}/{rows.length} tiers
+                                            </span>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-xs font-mono text-muted-foreground">No badges earned.</div>
+                                        <div className="flex gap-1.5 flex-wrap">
+                                            {rows.map((tier) => (
+                                                <div
+                                                    key={tier.id}
+                                                    title={`${tier.name}\n${tier.description}`}
+                                                    className={`relative flex-1 min-w-[72px] max-w-[100px] border px-2 py-2 transition-all ${
+                                                        tier.earned
+                                                            ? 'border-primary bg-primary/10 shadow-[0_0_12px_rgba(34,197,94,0.12)]'
+                                                            : 'border-border/50 bg-black/40 opacity-55'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-center mb-1">
+                                                        {tier.earned ? (
+                                                            <AchievementIcon name={tier.icon_key} className="w-6 h-6 text-primary" />
+                                                        ) : (
+                                                            <Lock className="w-5 h-5 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <div className="text-[8px] font-black font-mono uppercase text-center leading-tight line-clamp-2 text-foreground/90">
+                                                        L{tier.level}
+                                                    </div>
+                                                    <div className="text-[7px] font-mono text-muted-foreground text-center line-clamp-2 mt-0.5 leading-snug">
+                                                        {tier.name}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {totalCount === 0 && (
+                                <div className="text-xs font-mono text-muted-foreground py-4">Achievement catalog loading...</div>
                             )}
                         </div>
                     </div>

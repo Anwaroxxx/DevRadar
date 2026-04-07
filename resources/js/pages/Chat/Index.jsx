@@ -9,6 +9,7 @@ export default function ChatIndex({ chatUsers = [], selectedUser = null, message
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [sentToast, setSentToast] = useState(false);
     const scrollRef = useRef(null);
 
     const { data, setData, post, processing, reset } = useForm({
@@ -41,7 +42,11 @@ export default function ChatIndex({ chatUsers = [], selectedUser = null, message
         if (!data.content.trim() || processing) return;
         
         post(`/chat/${selectedUser.id}`, {
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                setSentToast(true);
+                window.setTimeout(() => setSentToast(false), 2000);
+            },
             preserveScroll: true,
             preserveState: true,
         });
@@ -53,6 +58,19 @@ export default function ChatIndex({ chatUsers = [], selectedUser = null, message
             
             <div className="max-w-7xl mx-auto px-4 py-6 h-[calc(100vh-120px)] flex flex-col font-mono">
                 <div className="flex flex-1 bg-black/40 border border-primary/20 overflow-hidden relative rounded-sm shadow-[0_0_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                    {/* Sent toast */}
+                    <AnimatePresence>
+                        {sentToast && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-3 right-3 z-30 border border-primary/30 bg-primary/10 text-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest"
+                            >
+                                MESSAGE_SENT
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                     
                     {/* Decorative Background Elements */}
                     <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(var(--primary)_1px,transparent_1px)] [background-size:24px_24px]"></div>
@@ -149,11 +167,18 @@ export default function ChatIndex({ chatUsers = [], selectedUser = null, message
                                                 <span className={`text-[11px] font-black uppercase truncate tracking-tight transition-colors ${selectedUser?.id === user.id ? 'text-primary' : 'text-foreground/80 group-hover:text-primary'}`}>
                                                     {user.name}
                                                 </span>
-                                                {user.last_message_time && (
-                                                    <span className="text-[8px] font-mono text-primary/30 whitespace-nowrap">
-                                                        {new Date(user.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                )}
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    {user.unread_count > 0 && (
+                                                        <span className="min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center text-[9px] font-black bg-primary text-black border border-primary shadow-[0_0_10px_rgba(34,197,94,0.25)]">
+                                                            {user.unread_count > 99 ? '99+' : user.unread_count}
+                                                        </span>
+                                                    )}
+                                                    {user.last_message_time && (
+                                                        <span className="text-[8px] font-mono text-primary/30 whitespace-nowrap">
+                                                            {new Date(user.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-[9px] font-mono text-muted-foreground truncate opacity-60 leading-tight">
                                                 {user.last_message ? (

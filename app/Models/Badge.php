@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Badge extends Model
 {
-    protected $fillable = ['name', 'icon', 'description', 'requirement', 'xp_threshold'];
+    protected $fillable = [
+        'slug', 'name', 'track', 'level', 'icon', 'icon_key', 'description', 'requirement', 'xp_threshold',
+    ];
 
     public function users() { return $this->belongsToMany(User::class, 'badge_user')->withTimestamps(); }
 }

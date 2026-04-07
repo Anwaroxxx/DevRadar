@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { Terminal, Save, ArrowLeft, Settings, Shield, Trash2, Key } from 'lucide-react';
 import TechIcon from '@/components/TechIcon';
@@ -124,11 +124,9 @@ export default function ProfileEdit({ user, allSkills = [] }) {
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    fetch('/profile/avatar', { method: 'DELETE' })
-                                                        .then(() => {
-                                                            window.location.reload();
-                                                        })
-                                                        .catch(err => console.error('Failed to remove avatar:', err));
+                                                    router.delete('/profile/avatar', {
+                                                        preserveScroll: true,
+                                                    });
                                                 }}
                                                 className="text-[10px] text-destructive hover:text-destructive/80 mt-2 underline"
                                             >
