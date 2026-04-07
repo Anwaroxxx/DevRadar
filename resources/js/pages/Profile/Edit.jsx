@@ -3,11 +3,11 @@ import HackerLayout from '@/layouts/HackerLayout';
 import { Terminal, Save, ArrowLeft, Settings, Shield, Trash2, Key } from 'lucide-react';
 import TechIcon from '@/components/TechIcon';
 
-export default function ProfileEdit({ user, allSkills }) {
-    const { data, setData, post, patch, errors, processing, recentlySuccessful } = useForm({
+export default function ProfileEdit({ user, allSkills = [] }) {
+    const page = usePage();
+    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         username: user.username,
-        email: user.email,
         bio: user.bio || '',
         github_url: user.github_url || '',
         location: user.location || '',
@@ -30,14 +30,21 @@ export default function ProfileEdit({ user, allSkills }) {
 
     const submit = (e) => {
         e.preventDefault();
-        // Since we are uploading a file, we use post with _method: PATCH
-        post('/profile', {
-            forceFormData: true,
-            data: {
-                ...data,
-                _method: 'PATCH'
-            }
-        });
+        
+        // Build options
+        const options = {
+            onSuccess: () => {
+                // Redirect happens automatically via redirect() in controller
+            },
+            onError: (errors) => {
+                console.error('Profile update failed:', errors);
+            },
+            // If there's an avatar file, we need to use forceFormData to send multipart/form-data
+            forceFormData: !!data.avatar_file,
+        };
+        
+        // Use Inertia's patch method to update profile
+        patch('/profile', options);
     };
 
     const updatePassword = (e) => {
@@ -93,19 +100,26 @@ export default function ProfileEdit({ user, allSkills }) {
                                 <div className="flex items-center gap-6 py-4">
                                     <div className="w-20 h-20 border-2 border-primary/50 bg-black/40 flex items-center justify-center relative overflow-hidden">
                                         {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <span className="text-2xl font-bold opacity-30">{user.name[0]}</span>}
-                                        <div className="absolute inset-0 bg-primary/10 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                        <div className="absolute inset-0 bg-primary/10 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer group">
                                             <input 
                                                 type="file" 
+                                                accept="image/*"
                                                 className="absolute inset-0 opacity-0 cursor-pointer"
-                                                onChange={(e) => setData('avatar_file', e.target.files[0])}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        console.log('File selected:', file.name, file.size);
+                                                        setData('avatar_file', file);
+                                                    }
+                                                }}
                                             />
-                                            <span className="text-[8px] font-bold text-center">CHNG<br/>IMG</span>
+                                            <span className="text-[8px] font-bold text-center group-hover:text-primary transition-colors">CHNG<br/>IMG</span>
                                         </div>
                                     </div>
                                     <div className="flex-1">
                                         <label className="block text-[10px] text-muted-foreground uppercase mb-1">Avatar_Source</label>
                                         <p className="text-[10px] text-primary/60 italic leading-tight">Click the node image to upload a new identity visualization. (MAX 2MB)</p>
-                                        {data.avatar_file && <div className="text-[10px] text-primary mt-1 font-bold">[FILE_LOADED: {data.avatar_file.name}]</div>}
+                                        {data.avatar_file && <div className="text-[10px] text-primary mt-1 font-bold">[FILE_LOADED: {data.avatar_file.name} - {(data.avatar_file.size / 1024).toFixed(2)}KB]</div>}
                                     </div>
                                 </div>
 

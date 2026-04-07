@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap, Menu, X, Shield, Clock as ClockIcon } from 'lucide-react';
+import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap, Menu, X, Shield, Clock as ClockIcon, ChevronDown } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import AsciiWaterfall from '@/components/AsciiWaterfall';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,20 @@ export default function HackerLayout({ children }) {
     const { auth, flash } = usePage().props;
     const user = auth?.user;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMoreOpen, setIsMoreOpen] = useState(false);
     const [time, setTime] = useState(new Date());
+    const [showNotification, setShowNotification] = useState(true);
+
+    // Auto-dismiss notification after 5 seconds
+    useEffect(() => {
+        if (flash?.success || flash?.error || flash?.info) {
+            setShowNotification(true);
+            const timer = setTimeout(() => {
+                setShowNotification(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [flash]);
 
     // Live Clock Logic
     useEffect(() => {
@@ -22,21 +35,24 @@ export default function HackerLayout({ children }) {
         document.documentElement.classList.remove('light');
     }, []);
 
-    const baseNavLinks = [
+    // Primary nav links - always visible on desktop
+    const primaryNavLinks = [
         { href: '/',             label: 'Map',          icon: Map },
         { href: '/events',       label: 'Events',       icon: Calendar },
         { href: '/jobs',         label: 'Jobs',         icon: Briefcase },
         { href: '/communities',  label: 'Communities',  icon: Users },
+    ];
+
+    // Secondary nav links - in "More" dropdown
+    const secondaryNavLinks = [
         { href: '/leaderboard',  label: 'Leaderboard',  icon: Trophy },
         { href: '/chat',         label: 'Chat',         icon: MessageSquare },
         { href: '/ai/chat',      label: 'AI Hub',       icon: Cpu, pulse: true },
         { href: '/marketplace',  label: 'Marketplace',  icon: Zap, glow: true },
     ];
 
-    const navLinks = [
-        ...baseNavLinks,
-        ...( (user?.role === 'admin' || user?.is_admin) ? [{ href: '/admin', label: 'Admin', icon: Shield, admin: true }] : [] )
-    ];
+    const adminLinks = (user?.role === 'admin' || user?.is_admin) ? [{ href: '/admin', label: 'Admin Panel', icon: Shield, admin: true }] : [];
+    const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks, ...adminLinks];
 
     return (
         <div className="min-h-screen bg-[#050505] text-foreground font-sans flex flex-col selection:bg-primary selection:text-primary-foreground transition-colors duration-500 overflow-x-hidden">
@@ -64,18 +80,51 @@ export default function HackerLayout({ children }) {
                             </Link>
                         </div>
 
-                        {/* Desktop Navigation */}
-                        <nav className="hidden md:flex gap-4 lg:gap-6 items-center flex-1 justify-center text-[11px] lg:text-[13px] font-bold uppercase tracking-tight overflow-x-auto no-scrollbar">
-                            {navLinks.map((link) => (
+                        {/* Desktop Navigation - Primary Links Only */}
+                        <nav className="hidden md:flex gap-6 lg:gap-8 items-center flex-1 justify-center text-sm font-bold uppercase tracking-wide">
+                            {primaryNavLinks.map((link) => (
                                 <Link 
                                     key={link.href}
                                     href={link.href} 
-                                    className={`hover:text-primary transition-colors flex items-center gap-1.5 group shrink-0 ${link.admin ? 'text-yellow-400' : ''}`}
+                                    className="hover:text-primary transition-colors flex items-center gap-2 group shrink-0"
                                 >
-                                    <link.icon className={`w-3.5 h-3.5 group-hover:scale-110 transition-transform ${link.pulse ? 'animate-pulse' : ''} ${link.glow ? 'fill-primary/20' : ''}`}/> 
+                                    <link.icon className="w-4 h-4 group-hover:scale-110 transition-transform"/> 
                                     {link.label}
                                 </Link>
                             ))}
+                            
+                            {/* More Dropdown */}
+                            <div className="relative group">
+                                <button className="hover:text-primary transition-colors flex items-center gap-2 group shrink-0">
+                                    <span>More</span>
+                                    <ChevronDown className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                </button>
+                                
+                                {/* Dropdown Menu */}
+                                <div className="absolute right-0 mt-8 w-56 bg-card border border-border rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
+                                    {secondaryNavLinks.map((link) => (
+                                        <Link 
+                                            key={link.href}
+                                            href={link.href} 
+                                            className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-primary/10 transition-all border-b border-border/50 last:border-b-0 group"
+                                        >
+                                            <link.icon className={`w-4 h-4 ${link.pulse ? 'animate-pulse' : ''}`} />
+                                            <span>{link.label}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Admin Link - if user is admin */}
+                            {adminLinks.length > 0 && (
+                                <Link 
+                                    href="/admin" 
+                                    className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 ml-4 border-l border-yellow-400/30 pl-4 shrink-0"
+                                >
+                                    <Shield className="w-4 h-4" /> 
+                                    Admin
+                                </Link>
+                            )}
                         </nav>
 
                         {/* Right Area: Clock & User */}
@@ -100,7 +149,7 @@ export default function HackerLayout({ children }) {
                                             <span className="text-[10px] text-muted-foreground font-mono">{user.xp} XP</span>
                                         </div>
                                     </div>
-                                    <Link href={user.is_admin ? "/admin" : `/profile/${user.username}`} className={`w-9 h-9 border-2 flex items-center justify-center font-black text-sm bg-card shrink-0 uppercase relative group overflow-hidden ${user.is_admin ? 'border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]' : 'border-primary/50 text-primary shadow-[0_0_15px_rgba(34,197,94,0.1)]'}`}>
+                                    <Link href={`/profile/${user.username}`} className={`w-9 h-9 border-2 flex items-center justify-center font-black text-sm bg-card shrink-0 uppercase relative group overflow-hidden ${user.is_admin ? 'border-yellow-400 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]' : 'border-primary/50 text-primary shadow-[0_0_15px_rgba(34,197,94,0.1)]'}`}>
                                         {user.avatar ? (
                                             <img src={user.avatar} className="w-full h-full object-cover" />
                                         ) : (
@@ -135,19 +184,19 @@ export default function HackerLayout({ children }) {
                             exit={{ height: 0, opacity: 0 }}
                             className="md:hidden bg-card border-b border-border overflow-hidden"
                         >
-                            <nav className="p-4 flex flex-col gap-4 font-bold uppercase text-sm">
-                                {navLinks.map((link) => (
+                            <nav className="p-4 flex flex-col gap-3 font-bold uppercase text-sm">
+                                {allNavLinks.map((link) => (
                                     <Link 
                                         key={link.href}
                                         href={link.href} 
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className={`flex items-center gap-3 p-2 hover:bg-primary/10 transition-all ${link.admin ? 'text-yellow-400' : ''}`}
+                                        className={`flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-all rounded border border-border/50 ${link.admin ? 'text-yellow-400 border-yellow-400/30' : ''}`}
                                     >
-                                        <link.icon className={`w-4 h-4 ${link.pulse ? 'animate-pulse' : ''}`} />
-                                        {link.label}
+                                        <link.icon className={`w-4 h-4 shrink-0 ${link.pulse ? 'animate-pulse' : ''}`} />
+                                        <span>{link.label}</span>
                                     </Link>
                                 ))}
-                                <div className="border-t border-border mt-2 pt-4 flex items-center justify-between font-mono text-[9px] text-muted-foreground uppercase">
+                                <div className="border-t border-border mt-4 pt-4 flex items-center justify-between font-mono text-[9px] text-muted-foreground uppercase">
                                     <span>SYS_CLOCK: {time.toLocaleTimeString()}</span>
                                     <span>LVL_SEC: HI_VIS</span>
                                 </div>
@@ -160,7 +209,7 @@ export default function HackerLayout({ children }) {
             {/* Neural Notification Cluster */}
             <div className="fixed top-20 right-6 z-[60] flex flex-col gap-4 pointer-events-none w-80">
                 <AnimatePresence>
-                    {(flash?.success || flash?.error || flash?.info) && (
+                    {showNotification && (flash?.success || flash?.error || flash?.info) && (
                         <motion.div
                             initial={{ x: 300, opacity: 0, scale: 0.9 }}
                             animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -184,13 +233,11 @@ export default function HackerLayout({ children }) {
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => {
-                                        // Since we can't easily clear flash from here without a trip to the server, 
-                                        // we'll just let it be for now or rely on the next navigation.
-                                    }}
-                                    className="opacity-40 hover:opacity-100 transition-opacity"
+                                    onClick={() => setShowNotification(false)}
+                                    className="opacity-40 hover:opacity-100 transition-opacity cursor-pointer hover:text-current"
+                                    title="Close notification"
                                 >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
                             

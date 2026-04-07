@@ -112,7 +112,7 @@ class AiController extends Controller
         }
 
         try {
-            $response = Http::withoutVerifying()->timeout(30)->withHeaders([
+            $response = Http::timeout(30)->withHeaders([
                 'Authorization' => "Bearer {$this->apiKey}",
                 'Content-Type'  => 'application/json',
             ])->post('https://api.groq.com/openai/v1/chat/completions', [

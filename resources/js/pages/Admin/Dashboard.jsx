@@ -4,10 +4,14 @@ import { motion } from 'framer-motion';
 import {
     Users, Calendar, Briefcase, Network, Zap, Shield,
     TrendingUp, Clock, AlertTriangle, CheckCircle, XCircle,
-    Cpu, Eye, ArrowRight, Activity
+    Cpu, Eye, ArrowRight, Activity, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon
 } from 'lucide-react';
+import {
+    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 
-export default function AdminDashboard({ stats, recentUsers, recentEvents, recentJobs, topUsers }) {
+export default function AdminDashboard({ stats, recentUsers, recentEvents, recentJobs, topUsers, userGrowth, xpByRole, eventsByCategory }) {
     const statCards = [
         { label: 'Total Users',       value: stats.totalUsers,       icon: Users,    color: 'text-blue-400',   bg: 'bg-blue-400/10',   border: 'border-blue-400/30' },
         { label: 'Total Events',      value: stats.totalEvents,      icon: Calendar, color: 'text-primary',    bg: 'bg-primary/10',    border: 'border-primary/30' },
@@ -25,6 +29,8 @@ export default function AdminDashboard({ stats, recentUsers, recentEvents, recen
         { href: '/admin/jobs',        label: 'Manage Jobs',        icon: Briefcase,count: stats.totalJobs,        desc: `${stats.activeJobs} active listings` },
         { href: '/admin/communities', label: 'Communities',        icon: Network,  count: stats.totalCommunities, desc: 'View and delete communities' },
     ];
+
+    const COLORS = ['#22c55e', '#3b82f6', '#fbbf24', '#a855f7', '#f87171', '#06b6d4', '#ec4899', '#f59e0b'];
 
     return (
         <HackerLayout>
@@ -95,6 +101,129 @@ export default function AdminDashboard({ stats, recentUsers, recentEvents, recen
                             </Link>
                         </motion.div>
                     ))}
+                </div>
+
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* User Growth Chart */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="border border-primary/30 bg-card p-6"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-black uppercase text-sm flex items-center gap-2">
+                                <LineChartIcon className="w-4 h-4 text-primary" /> User Growth (12m)
+                            </h2>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={userGrowth || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(34,197,94,0.1)" />
+                                <XAxis dataKey="month" stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e', borderRadius: 0 }}
+                                    labelStyle={{ color: '#22c55e' }}
+                                />
+                                <Line type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={{ fill: '#22c55e', r: 4 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+
+                    {/* XP Distribution by Role */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="border border-primary/30 bg-card p-6"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-black uppercase text-sm flex items-center gap-2">
+                                <BarChart3 className="w-4 h-4 text-primary" /> XP Distribution by Role
+                            </h2>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={xpByRole || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(34,197,94,0.1)" />
+                                <XAxis dataKey="role" stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e', borderRadius: 0 }}
+                                    labelStyle={{ color: '#22c55e' }}
+                                />
+                                <Bar dataKey="avg_xp" fill="#22c55e" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+
+                    {/* Events by Category */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="border border-primary/30 bg-card p-6"
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-black uppercase text-sm flex items-center gap-2">
+                                <PieChartIcon className="w-4 h-4 text-primary" /> Events by Category
+                            </h2>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={eventsByCategory || []}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, value }) => `${name}: ${value}`}
+                                    outerRadius={80}
+                                    fill="#22c55e"
+                                    dataKey="value"
+                                >
+                                    {(eventsByCategory || []).map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e', borderRadius: 0 }}
+                                    labelStyle={{ color: '#22c55e' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </motion.div>
+
+                    {/* XP Stats by Role */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="border border-primary/30 bg-card p-6"
+                    >
+                        <h2 className="font-black uppercase text-sm flex items-center gap-2 mb-6">
+                            <Activity className="w-4 h-4 text-primary" /> XP Stats by Role
+                        </h2>
+                        <div className="space-y-4">
+                            {(xpByRole || []).map((role, idx) => (
+                                <div key={idx} className="border border-border/50 p-3 hover:bg-primary/5 transition-colors">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="font-bold text-sm">{role.role}</span>
+                                        <span className="text-xs text-primary font-mono">{role.user_count} users</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs text-muted-foreground font-mono mb-2">
+                                        <span>Avg: {role.avg_xp.toLocaleString()}</span>
+                                        <span>Total: {role.total_xp.toLocaleString()}</span>
+                                    </div>
+                                    <div className="w-full bg-black/40 h-1 rounded overflow-hidden">
+                                        <div 
+                                            className="bg-primary h-full transition-all" 
+                                            style={{ width: `${Math.min((role.total_xp / 100000) * 100, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Two-column sections */}

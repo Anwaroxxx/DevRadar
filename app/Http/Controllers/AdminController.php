@@ -29,15 +29,41 @@ class AdminController extends Controller
         $aiAccessUsers    = User::whereNotNull('ai_access_until')
                               ->where('ai_access_until', '>', now())->count();
 
+        // User growth data for chart (last 12 months)
+        $userGrowth = User::selectRaw("strftime('%Y-%m', created_at) as month, count(*) as count")
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->map(fn($item) => [
+                'month' => \Carbon\Carbon::createFromFormat('Y-m', $item->month)->format('M'),
+                'count' => $item->count,
+            ]);
+
+        // XP distribution by role
+        $xpByRole = User::selectRaw("role, AVG(xp) as avg_xp, COUNT(*) as user_count, SUM(xp) as total_xp")
+            ->groupBy('role')
+            ->get()
+            ->map(fn($item) => [
+                'role' => ucfirst($item->role),
+                'avg_xp' => (int)$item->avg_xp,
+                'user_count' => $item->user_count,
+                'total_xp' => (int)$item->total_xp,
+            ]);
+
+        // Activity by category
+        $eventsByCategory = Event::selectRaw("category, count(*) as count")
+            ->groupBy('category')
+            ->get()
+            ->map(fn($item) => [
+                'name' => $item->category ?? 'Uncategorized',
+                'value' => $item->count,
+            ]);
+
+        // Recent activity
         $recentUsers = User::latest()->limit(5)->get(['id','name','username','email','role','xp','created_at']);
         $recentEvents = Event::with('user')->latest()->limit(5)->get(['id','title','city','category','is_approved','created_at','user_id']);
         $recentJobs   = JobListing::with('user')->latest()->limit(5)->get(['id','title','company','city','is_active','created_at','user_id']);
-
-        $userGrowth = User::selectRaw("strftime('%Y-%m', created_at) as month, count(*) as count")
-            ->groupBy('month')
-            ->orderBy('month')
-            ->limit(6)
-            ->get();
 
         $topUsers = User::orderByDesc('xp')->limit(5)->get(['id','name','username','avatar','xp','role']);
 
@@ -52,10 +78,13 @@ class AdminController extends Controller
                 'activeJobs'       => $activeJobs,
                 'aiAccessUsers'    => $aiAccessUsers,
             ],
-            'recentUsers'  => $recentUsers,
-            'recentEvents' => $recentEvents,
-            'recentJobs'   => $recentJobs,
-            'topUsers'     => $topUsers,
+            'recentUsers'   => $recentUsers,
+            'recentEvents'  => $recentEvents,
+            'recentJobs'    => $recentJobs,
+            'topUsers'      => $topUsers,
+            'userGrowth'    => $userGrowth,
+            'xpByRole'      => $xpByRole,
+            'eventsByCategory' => $eventsByCategory,
         ]);
     }
 

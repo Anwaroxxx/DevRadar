@@ -49,6 +49,7 @@ class ProfileController extends Controller
     {
         return Inertia::render('Profile/Edit', [
             'user' => $request->user()->load('skills'),
+            'allSkills' => \App\Models\Skill::all(),
         ]);
     }
 
@@ -56,6 +57,14 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         
+        // Debug incoming data
+        \Log::info('Profile update incoming', [
+            'has_avatar_file' => $request->hasFile('avatar_file'),
+            'all_files' => array_keys($request->allFiles()),
+            'all_data_keys' => array_keys($request->all()),
+        ]);
+        
+        // Validate all fields - required ones must be present
         $data = $request->validate([
             'name'       => 'required|string|max:255',
             'username'   => 'required|string|max:50|unique:users,username,' . $user->id,
@@ -64,24 +73,38 @@ class ProfileController extends Controller
             'location'   => 'nullable|string',
             'city'       => 'nullable|string',
             'skills'     => 'nullable|array',
+            'skills.*'   => 'nullable|integer',
             'avatar_file' => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('avatar_file')) {
+            \Log::info('Processing file upload', [
+                'original_name' => $request->file('avatar_file')->getClientOriginalName(),
+                'size' => $request->file('avatar_file')->getSize(),
+                'mime' => $request->file('avatar_file')->getMimeType(),
+            ]);
+            
             $path = $request->file('avatar_file')->store('avatars', 'public');
             $data['avatar'] = '/storage/' . $path;
+            
+            \Log::info('File stored successfully', [
+                'stored_path' => $path,
+                'avatar_url' => $data['avatar'],
+            ]);
         }
 
         $skills = $data['skills'] ?? [];
         unset($data['skills'], $data['avatar_file']);
 
-        $user->update($data);
+        // Only update fields that have values
+        $updateData = array_filter($data, fn($value) => $value !== null && $value !== '');
+        
+        \Log::info('Updating user', ['update_data' => $updateData]);
+        $user->update($updateData);
 
         if (!empty($skills)) {
-            $skillIds = collect($skills)->map(function ($name) {
-                return \App\Models\Skill::firstOrCreate(['name' => $name])->id;
-            });
-            $user->skills()->sync($skillIds);
+            // Skills are IDs, not names
+            $user->skills()->sync($skills);
         }
 
         return redirect()->route('profile.show', $user->username)->with('success', 'Profile updated!');
