@@ -141,4 +141,11 @@ class ProfileController extends Controller
 
         return redirect('/');
     }
+
+    public function removeAvatar(Request $request)
+    {
+        $user = $request->user();
+        $user->update(['avatar' => null]);
+        return back()->with('success', 'Avatar removed successfully.');
+    }
 }

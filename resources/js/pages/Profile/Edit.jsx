@@ -120,6 +120,21 @@ export default function ProfileEdit({ user, allSkills = [] }) {
                                         <label className="block text-[10px] text-muted-foreground uppercase mb-1">Avatar_Source</label>
                                         <p className="text-[10px] text-primary/60 italic leading-tight">Click the node image to upload a new identity visualization. (MAX 2MB)</p>
                                         {data.avatar_file && <div className="text-[10px] text-primary mt-1 font-bold">[FILE_LOADED: {data.avatar_file.name} - {(data.avatar_file.size / 1024).toFixed(2)}KB]</div>}
+                                        {user.avatar && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    fetch('/profile/avatar', { method: 'DELETE' })
+                                                        .then(() => {
+                                                            window.location.reload();
+                                                        })
+                                                        .catch(err => console.error('Failed to remove avatar:', err));
+                                                }}
+                                                className="text-[10px] text-destructive hover:text-destructive/80 mt-2 underline"
+                                            >
+                                                [DEL] Remove_Avatar
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
