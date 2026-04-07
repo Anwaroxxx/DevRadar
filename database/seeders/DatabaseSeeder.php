@@ -14,8 +14,13 @@ use App\Models\Badge;
 
 class DatabaseSeeder extends Seeder
 {
+    
     public function run(): void
     {
+        // Clean slate before seeding
+    Badge::truncate();
+    Tag::truncate();
+    Skill::truncate();
         // Badges
         $badges = [
             ['name'=>'Newcomer',     'icon'=>'🌱','description'=>'Just joined DevRadar','requirement'=>'register','xp_threshold'=>0],
