@@ -29,16 +29,16 @@ class AdminController extends Controller
         $aiAccessUsers    = User::whereNotNull('ai_access_until')
                               ->where('ai_access_until', '>', now())->count();
 
-        // User growth data for chart (last 12 months)
-        $userGrowth = User::selectRaw("strftime('%Y-%m', created_at) as month, count(*) as count")
-            ->where('created_at', '>=', now()->subMonths(12))
-            ->groupBy('month')
-            ->orderBy('month')
+        // User growth data for chart (last 12 months) - database-agnostic
+        $userGrowth = User::where('created_at', '>=', now()->subMonths(12))
+            ->selectRaw('created_at')
             ->get()
-            ->map(fn($item) => [
-                'month' => \Carbon\Carbon::createFromFormat('Y-m', $item->month)->format('M'),
-                'count' => $item->count,
-            ]);
+            ->groupBy(fn($item) => $item->created_at->format('Y-m'))
+            ->map(fn($group, $month) => [
+                'month' => \Carbon\Carbon::createFromFormat('Y-m', $month)->format('M'),
+                'count' => $group->count(),
+            ])
+            ->values();
 
         // XP distribution by role
         $xpByRole = User::selectRaw("role, AVG(xp) as avg_xp, COUNT(*) as user_count, SUM(xp) as total_xp")
