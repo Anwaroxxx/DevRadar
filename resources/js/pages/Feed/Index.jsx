@@ -41,7 +41,7 @@ export default function FeedIndex({ recentEvents, recentJobs, recentCommunities,
                 <div className="flex-1">
                     <div className="flex justify-between items-center mb-8 border-b border-border pb-4">
                         <h1 className="text-3xl font-black uppercase tracking-widest text-primary flex items-center gap-3">
-                            <Activity className="w-8 h-8" /> > SYSTEM_LOGS
+                            <Activity className="w-8 h-8" /> → SYSTEM_LOGS
                         </h1>
                     </div>
 

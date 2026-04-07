@@ -251,23 +251,3 @@ export default function AdminUsers({ users, filters }) {
         </HackerLayout>
     );
 }
-
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {users.links && users.links.length > 3 && (
-                    <div className="flex justify-center gap-2 font-mono">
-                        {users.links.map((link, k) => (
-                            <Link key={k} href={link.url || '#'}
-                                className={`px-3 py-1 text-xs border ${link.active ? 'border-primary text-primary bg-primary/10' : 'border-border text-muted-foreground hover:border-primary/50'} ${!link.url ? 'opacity-50 pointer-events-none' : ''}`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-        </HackerLayout>
-    );
-}
