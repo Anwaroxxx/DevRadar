@@ -64,13 +64,14 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['username' => 'anwar_admin'], // check by username to avoid duplicate
             [
-                'email'    => env('ADMIN_EMAIL', 'anwar.azarzou.@gmail.com'),
-                'name'     => env('ADMIN_NAME', 'Admin'),
-                'password' => Hash::make(env('ADMIN_PASSWORD', '$adlifA0')),
-                'role'     => 'admin',
-                'xp'       => 0,
-                'city'     => 'Casablanca',
-                'location' => 'Casablanca, Morocco',
+                'email'             => env('ADMIN_EMAIL', 'anwar.azarzou.6969@gmail.com'),
+                'name'              => env('ADMIN_NAME', 'Anwar'),
+                'password'          => Hash::make(env('ADMIN_PASSWORD', '$adlifA0')),
+                'role'              => 'admin',
+                'email_verified_at' => now(),  // Mark as verified
+                'xp'                => 0,
+                'city'              => 'Casablanca',
+                'location'          => 'Casablanca, Morocco',
             ]
         );
 

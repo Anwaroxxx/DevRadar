@@ -12,8 +12,13 @@ php artisan route:cache
 php artisan view:cache
 
 # Run database migrations automatically on startup
-# (Warning: For SQLite, data resets on each deploy)
 php artisan migrate --force
+
+# Seed the database with admin user and core data
+php artisan db:seed --force
+
+# Create the storage symlink for public file access (avatars, etc.)
+php artisan storage:link --quiet
 
 # Pass control to the main Docker CMD (Apache)
 exec "$@"
