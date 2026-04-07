@@ -12,6 +12,9 @@ use App\Models\ContentReport;
 use App\Models\MarketplaceItem;
 use App\Models\XpReward;
 use App\Models\AiUsageLog;
+use App\Models\AuditLog;
+use App\Models\FeatureFlag;
+use App\Models\PlatformMetric;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -642,5 +645,132 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', "Monthly AI usage reset for @{$user->username}.");
+    }
+
+    // ─────────── Phase 3: Analytics Dashboard ───────────
+
+    public function analytics(Request $request)
+    {
+        // Get metrics for the last 30 days
+        $metrics = PlatformMetric::where('date', '>=', now()->subDays(30))
+            ->orderBy('date')
+            ->get()
+            ->groupBy('metric_name');
+
+        // Calculate summary stats
+        $totalUsers = User::count();
+        $newUsersThisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();
+        $activeUsersToday = User::where('updated_at', '>=', now()->subDay())->count();
+        $totalEvents = Event::count();
+        $totalJobs = JobListing::count();
+        $avgUserXp = (int)User::avg('xp');
+
+        // User growth trend
+        $userGrowth = User::where('created_at', '>=', now()->subDays(30))
+            ->selectRaw('created_at')
+            ->get()
+            ->groupBy(fn($item) => $item->created_at->toDateString())
+            ->map(fn($group) => $group->count())
+            ->toArray();
+
+        // Fill gaps in dates
+        $allDates = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $allDates[$date] = $userGrowth[$date] ?? 0;
+        }
+
+        return Inertia::render('Admin/Analytics', [
+            'summary' => [
+                'total_users' => $totalUsers,
+                'new_users_this_month' => $newUsersThisMonth,
+                'active_users_today' => $activeUsersToday,
+                'total_events' => $totalEvents,
+                'total_jobs' => $totalJobs,
+                'avg_user_xp' => $avgUserXp,
+            ],
+            'metrics' => $metrics,
+            'user_growth' => $allDates,
+        ]);
+    }
+
+    // ─────────── Phase 3: Feature Flags ───────────
+
+    public function settings(Request $request)
+    {
+        $flags = FeatureFlag::all();
+
+        return Inertia::render('Admin/Settings', [
+            'feature_flags' => $flags,
+        ]);
+    }
+
+    public function toggleFeatureFlag(Request $request, FeatureFlag $flag)
+    {
+        $flag->update([
+            'enabled' => !$flag->enabled,
+            'enabled_at' => $flag->enabled ? now() : $flag->enabled_at,
+            'disabled_at' => !$flag->enabled ? now() : $flag->disabled_at,
+        ]);
+
+        AuditLog::log(
+            auth()->id(),
+            'toggle_feature_flag',
+            'feature_flag',
+            $flag->id,
+            ['enabled' => $flag->enabled],
+            "Feature flag '{$flag->name}' " . ($flag->enabled ? 'enabled' : 'disabled')
+        );
+
+        $status = $flag->enabled ? 'enabled' : 'disabled';
+        return back()->with('success', "Feature flag '{$flag->name}' {$status}.");
+    }
+
+    public function updateFeatureFlagConfig(Request $request, FeatureFlag $flag)
+    {
+        $request->validate(['config' => 'nullable|array']);
+
+        $oldConfig = $flag->config;
+        $flag->update(['config' => $request->config ?? []]);
+
+        AuditLog::log(
+            auth()->id(),
+            'update_feature_config',
+            'feature_flag',
+            $flag->id,
+            ['old_config' => $oldConfig, 'new_config' => $flag->config],
+            "Feature flag '{$flag->name}' configuration updated"
+        );
+
+        return back()->with('success', "Feature flag '{$flag->name}' configuration updated.");
+    }
+
+    // ─────────── Phase 3: Audit Logs ───────────
+
+    public function auditLogs(Request $request)
+    {
+        $query = AuditLog::with('admin')->orderByDesc('created_at');
+
+        if ($request->action) {
+            $query->where('action', 'LIKE', "%{$request->action}%");
+        }
+
+        if ($request->admin_id) {
+            $query->where('admin_id', $request->admin_id);
+        }
+
+        if ($request->target_type) {
+            $query->where('target_type', $request->target_type);
+        }
+
+        $logs = $query->paginate(25)->withQueryString();
+
+        $admins = User::where('role', 'admin')->get();
+
+        return Inertia::render('Admin/AuditLogs', [
+            'logs' => $logs,
+            'admins' => $admins,
+            'filters' => $request->only(['action', 'admin_id', 'target_type']),
+        ]);
     }
 }

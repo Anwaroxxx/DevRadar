@@ -127,6 +127,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/grant-ai', [\App\Http\Controllers\AdminController::class, 'grantAiAccess'])->name('users.grant-ai');
         Route::post('/users/{user}/revoke-ai', [\App\Http\Controllers\AdminController::class, 'revokeAiAccess'])->name('users.revoke-ai');
         Route::post('/users/{user}/reset-ai-usage', [\App\Http\Controllers\AdminController::class, 'resetAiMonthlyUsage'])->name('users.reset-ai-usage');
+
+        // Phase 3: Analytics
+        Route::get('/analytics', [\App\Http\Controllers\AdminController::class, 'analytics'])->name('analytics');
+
+        // Phase 3: Settings & Feature Flags
+        Route::get('/settings', [\App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
+        Route::post('/feature-flags/{flag}/toggle', [\App\Http\Controllers\AdminController::class, 'toggleFeatureFlag'])->name('feature-flags.toggle');
+        Route::put('/feature-flags/{flag}/config', [\App\Http\Controllers\AdminController::class, 'updateFeatureFlagConfig'])->name('feature-flags.config');
+
+        // Phase 3: Audit Logs
+        Route::get('/audit-logs', [\App\Http\Controllers\AdminController::class, 'auditLogs'])->name('audit-logs');
     });
 });
 
