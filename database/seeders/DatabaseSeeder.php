@@ -16,22 +16,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-
+        // ✅ Seed Badges safely
         $badges = [
             ['name'=>'Newcomer',     'icon'=>'🌱','description'=>'Just joined DevRadar','requirement'=>'register','xp_threshold'=>0],
-            ['name'=>'Explorer',     'icon'=>'🔭','description'=>'Earned 100 XP',       'requirement'=>'xp_100', 'xp_threshold'=>100],
-            ['name'=>'Contributor',  'icon'=>'⚡','description'=>'Earned 300 XP',       'requirement'=>'xp_300', 'xp_threshold'=>300],
-            ['name'=>'Event Master', 'icon'=>'🎯','description'=>'Earned 500 XP',       'requirement'=>'xp_500', 'xp_threshold'=>500],
-            ['name'=>'Legend',       'icon'=>'🏆','description'=>'Earned 1000 XP',      'requirement'=>'xp_1000','xp_threshold'=>1000],
+            ['name'=>'Explorer',     'icon'=>'🔭','description'=>'Earned 100 XP','requirement'=>'xp_100','xp_threshold'=>100],
+            ['name'=>'Contributor',  'icon'=>'⚡','description'=>'Earned 300 XP','requirement'=>'xp_300','xp_threshold'=>300],
+            ['name'=>'Event Master', 'icon'=>'🎯','description'=>'Earned 500 XP','requirement'=>'xp_500','xp_threshold'=>500],
+            ['name'=>'Legend',       'icon'=>'🏆','description'=>'Earned 1000 XP','requirement'=>'xp_1000','xp_threshold'=>1000],
         ];
 
         foreach ($badges as $badge) {
-            Badge::firstOrCreate(
-                ['name' => $badge['name']],
-                $badge
-            );
+            Badge::firstOrCreate(['name' => $badge['name']], $badge);
         }
 
+        // ✅ Seed Tags safely
         $tagNames  = [
             'React','Laravel','Python','JavaScript','AI','Machine Learning',
             'DevOps','Node.js','Vue.js','Flutter','Blockchain','Cybersecurity',
@@ -51,6 +49,7 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        // ✅ Seed Skills safely
         $skills = [
             'React','Vue.js','Laravel','Django','FastAPI','Node.js',
             'TypeScript','Python','Java','Kotlin','Flutter','Docker',
@@ -61,19 +60,19 @@ class DatabaseSeeder extends Seeder
             Skill::firstOrCreate(['name' => $skill]);
         }
 
-
+        // ✅ Create admin safely (avoid duplicates)
         User::firstOrCreate(
-    ['email' => env('ADMIN_EMAIL', 'anwar.azarzou.@gmail.com')],
-    [
-        'name'     => env('ADMIN_NAME', 'Admin'),
-        'username' => 'anwar_admin',
-        'password' => Hash::make(env('ADMIN_PASSWORD', '$adlifA0')),
-        'role'     => 'admin',
-        'xp'       => 0,
-        'city'     => 'Casablanca',
-        'location' => 'Casablanca, Morocco',
-    ]
-);
+            ['username' => 'anwar_admin'], // check by username to avoid duplicate
+            [
+                'email'    => env('ADMIN_EMAIL', 'anwar.azarzou.@gmail.com'),
+                'name'     => env('ADMIN_NAME', 'Admin'),
+                'password' => Hash::make(env('ADMIN_PASSWORD', '$adlifA0')),
+                'role'     => 'admin',
+                'xp'       => 0,
+                'city'     => 'Casablanca',
+                'location' => 'Casablanca, Morocco',
+            ]
+        );
 
         $this->command->info('✅ DevRadar seeded successfully!');
     }
