@@ -134,25 +134,6 @@ class AdminController extends Controller
         return back()->with('success', "User @{$user->username} updated successfully.");
     }
 
-    public function grantAiAccess(Request $request, User $user)
-    {
-        $request->validate(['days' => 'required|integer|min:1|max:3650']);
-
-        $baseDate = $user->ai_access_until && $user->ai_access_until->isFuture()
-            ? $user->ai_access_until
-            : now();
-
-        $user->update(['ai_access_until' => $baseDate->addDays($request->days)]);
-
-        return back()->with('success', "AI access granted to @{$user->username} for {$request->days} days.");
-    }
-
-    public function revokeAiAccess(User $user)
-    {
-        $user->update(['ai_access_until' => null]);
-        return back()->with('success', "AI access revoked from @{$user->username}.");
-    }
-
     public function deleteUser(User $user)
     {
         if ($user->role === 'admin') {
