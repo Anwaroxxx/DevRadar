@@ -47,6 +47,11 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Ensure storage/app/public exists and has correct permissions
+RUN mkdir -p /var/www/html/storage/app/public \
+    && chown -R www-data:www-data /var/www/html/storage/app/public \
+    && chmod -R 775 /var/www/html/storage/app/public
+
 # Create SQLite database if using SQLite fallback
 RUN touch database/database.sqlite \
     && chown www-data:www-data database/database.sqlite

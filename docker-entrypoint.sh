@@ -1,8 +1,5 @@
 #!/bin/bash
 set -e
-
-# Update Apache to listen on the dynamic $PORT assigned by the hosting provider
-# Render, Railway, Heroku, etc. provide this at runtime.
 sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf
 sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/000-default.conf
 
@@ -18,7 +15,11 @@ php artisan migrate --force
 php artisan db:seed --force
 
 # Create the storage symlink for public file access (avatars, etc.)
-php artisan storage:link --quiet
+# Remove existing symlink if it's broken/stale, then create/recreate it
+if [ -L public/storage ]; then
+    rm -f public/storage
+fi
+php artisan storage:link --force 2>/dev/null || ln -sf ../storage/app/public public/storage
 
 # Pass control to the main Docker CMD (Apache)
 exec "$@"

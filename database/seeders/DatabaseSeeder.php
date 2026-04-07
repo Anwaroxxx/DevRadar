@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         foreach ($badges as $badge) {
             Badge::firstOrCreate(['name' => $badge['name']], $badge);
         }
+        $this->command->info('✅ Badges seeded');
 
         // ✅ Seed Tags safely
         $tagNames  = [
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
                 ['color' => $tagColors[$i % count($tagColors)]]
             );
         }
+        $this->command->info('✅ Tags seeded');
 
         // ✅ Seed Skills safely
         $skills = [
@@ -59,9 +61,10 @@ class DatabaseSeeder extends Seeder
         foreach ($skills as $skill) {
             Skill::firstOrCreate(['name' => $skill]);
         }
+        $this->command->info('✅ Skills seeded');
 
         // ✅ Create admin safely (avoid duplicates)
-        User::firstOrCreate(
+        $admin = User::firstOrCreate(
             ['username' => 'anwar_admin'], // check by username to avoid duplicate
             [
                 'email'             => env('ADMIN_EMAIL', 'anwar.azarzou.6969@gmail.com'),
@@ -74,7 +77,8 @@ class DatabaseSeeder extends Seeder
                 'location'          => 'Casablanca, Morocco',
             ]
         );
+        $this->command->info("✅ Admin user created: {$admin->email}");
 
-        $this->command->info('✅ DevRadar seeded successfully!');
+        $this->command->info('✅ DevRadar database seeded successfully!');
     }
 }
