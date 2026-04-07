@@ -25,7 +25,7 @@ Route::get('/support', fn() => inertia('Support'))->name('support');
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
-    // Events (create BEFORE show to avoid route conflict)
+    
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::post('/events/{event}/save', [EventController::class, 'toggleSave'])->name('events.save');

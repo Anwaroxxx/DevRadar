@@ -31,5 +31,6 @@
 
     <p style="margin: 0;">Thanks,<br>DevRadar Team</p>
 </body>
+
 </html>
 
