@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import {
     Users, Calendar, Briefcase, Network, Zap, Shield,
     TrendingUp, Clock, AlertTriangle, CheckCircle, XCircle,
-    Cpu, Eye, ArrowRight, Activity, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon
+    Cpu, Eye, ArrowRight, Activity, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon,
+    ShoppingCart, Settings, AlertCircle, FileText
 } from 'lucide-react';
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -24,10 +25,18 @@ export default function AdminDashboard({ stats, recentUsers, recentEvents, recen
     ];
 
     const adminLinks = [
-        { href: '/admin/users',       label: 'Manage Users',       icon: Users,    count: stats.totalUsers,       desc: 'Edit roles, AI access, delete' },
-        { href: '/admin/events',      label: 'Moderate Events',    icon: Calendar, count: stats.totalEvents,      desc: `${stats.pendingEvents} pending approval` },
-        { href: '/admin/jobs',        label: 'Manage Jobs',        icon: Briefcase,count: stats.totalJobs,        desc: `${stats.activeJobs} active listings` },
-        { href: '/admin/communities', label: 'Communities',        icon: Network,  count: stats.totalCommunities, desc: 'View and delete communities' },
+        // Phase 1: Moderation & Approval
+        { href: '/admin/users',       label: 'Manage Users',       icon: Users,    count: stats.totalUsers,       desc: 'Ban, suspend, warn users' },
+        { href: '/admin/reports',     label: 'Content Reports',    icon: AlertCircle, count: '?',              desc: 'Review user reports' },
+        { href: '/admin/approval-queue', label: 'Approval Queue',  icon: CheckCircle, count: stats.pendingEvents, desc: 'Approve events & jobs' },
+        // Phase 2: Economics & Access
+        { href: '/admin/marketplace',   label: 'Marketplace',      icon: ShoppingCart, count: '?',            desc: 'Manage items & pricing' },
+        { href: '/admin/xp-economy',    label: 'XP Economy',       icon: Zap,          count: '?',            desc: 'Configure reward system' },
+        { href: '/admin/ai-access',     label: 'AI Access',        icon: Cpu,          count: stats.aiAccessUsers, desc: 'User quotas & tiers' },
+        // Phase 3: Analytics & Settings
+        { href: '/admin/analytics',     label: 'Analytics',        icon: BarChart3,    count: '?',            desc: 'Platform insights' },
+        { href: '/admin/audit-logs',    label: 'Audit Logs',       icon: FileText,     count: '?',            desc: 'All admin actions' },
+        { href: '/admin/settings',      label: 'Settings',         icon: Settings,     count: '?',            desc: 'Feature flags & config' },
     ];
 
     const COLORS = ['#22c55e', '#3b82f6', '#fbbf24', '#a855f7', '#f87171', '#06b6d4', '#ec4899', '#f59e0b'];
@@ -80,27 +89,72 @@ export default function AdminDashboard({ stats, recentUsers, recentEvents, recen
                 </div>
 
                 {/* Admin Navigation Panels */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {adminLinks.map((link, idx) => (
-                        <motion.div
-                            key={link.href}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                        >
-                            <Link
-                                href={link.href}
-                                className="block border border-primary/30 bg-card p-6 hover:border-primary hover:bg-primary/5 transition-all group relative overflow-hidden"
+                <div>
+                    <h2 className="text-lg font-bold uppercase text-primary mb-4">🔧 PHASE 1: Moderation & Approval</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                        {adminLinks.slice(0, 3).map((link, idx) => (
+                            <motion.div
+                                key={link.href}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <link.icon className="w-8 h-8 text-primary mb-4 group-hover:scale-110 transition-transform" />
-                                <div className="font-black text-lg uppercase tracking-tight">{link.label}</div>
-                                <div className="text-3xl font-black text-primary font-mono my-2">{link.count}</div>
-                                <div className="text-xs text-muted-foreground font-mono">{link.desc}</div>
-                                <ArrowRight className="absolute bottom-4 right-4 w-4 h-4 text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                            </Link>
-                        </motion.div>
-                    ))}
+                                <Link
+                                    href={link.href}
+                                    className="block border border-primary/30 bg-card p-4 hover:border-primary hover:bg-primary/5 transition-all group relative overflow-hidden"
+                                >
+                                    <link.icon className="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                                    <div className="font-bold text-sm uppercase tracking-tight">{link.label}</div>
+                                    <div className="text-xs text-muted-foreground font-mono line-clamp-2">{link.desc}</div>
+                                    <ArrowRight className="absolute bottom-2 right-2 w-3 h-3 text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <h2 className="text-lg font-bold uppercase text-primary mb-4">💰 PHASE 2: Economics & Access</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {adminLinks.slice(3, 6).map((link, idx) => (
+                            <motion.div
+                                key={link.href}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: (idx + 3) * 0.05 }}
+                            >
+                                <Link
+                                    href={link.href}
+                                    className="block border border-primary/30 bg-card p-4 hover:border-primary hover:bg-primary/5 transition-all group relative overflow-hidden"
+                                >
+                                    <link.icon className="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                                    <div className="font-bold text-sm uppercase tracking-tight">{link.label}</div>
+                                    <div className="text-xs text-muted-foreground font-mono line-clamp-2">{link.desc}</div>
+                                    <ArrowRight className="absolute bottom-2 right-2 w-3 h-3 text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <h2 className="text-lg font-bold uppercase text-primary mb-4">📊 PHASE 3: Analytics & Settings</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {adminLinks.slice(6).map((link, idx) => (
+                            <motion.div
+                                key={link.href}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: (idx + 6) * 0.05 }}
+                            >
+                                <Link
+                                    href={link.href}
+                                    className="block border border-primary/30 bg-card p-4 hover:border-primary hover:bg-primary/5 transition-all group relative overflow-hidden"
+                                >
+                                    <link.icon className="w-6 h-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                                    <div className="font-bold text-sm uppercase tracking-tight">{link.label}</div>
+                                    <div className="text-xs text-muted-foreground font-mono line-clamp-2">{link.desc}</div>
+                                    <ArrowRight className="absolute bottom-2 right-2 w-3 h-3 text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Charts Section */}
