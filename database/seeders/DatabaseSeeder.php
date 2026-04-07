@@ -51,7 +51,6 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info('✅ Tags seeded');
 
-        // ✅ Seed Skills safely
         $skills = [
             'React','Vue.js','Laravel','Django','FastAPI','Node.js',
             'TypeScript','Python','Java','Kotlin','Flutter','Docker',
@@ -63,15 +62,14 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info('✅ Skills seeded');
 
-        // ✅ Create admin safely (avoid duplicates)
         $admin = User::firstOrCreate(
-            ['username' => 'anwar_admin'], // check by username to avoid duplicate
+            ['username' => 'anwar_admin'],
             [
                 'email'             => env('ADMIN_EMAIL', 'anwar.azarzou.6969@gmail.com'),
                 'name'              => env('ADMIN_NAME', 'Anwar'),
                 'password'          => Hash::make(env('ADMIN_PASSWORD', '$adlifA0')),
                 'role'              => 'admin',
-                'email_verified_at' => now(),  // Mark as verified
+                'email_verified_at' => now(),
                 'xp'                => 0,
                 'city'              => 'Casablanca',
                 'location'          => 'Casablanca, Morocco',
