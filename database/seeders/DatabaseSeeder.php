@@ -43,17 +43,17 @@ class DatabaseSeeder extends Seeder
 
         // Admin account
         User::firstOrCreate(
-            ['email' => 'anwar.azarzou.6969@gmail.com'],
-            [
-                'name'     => 'Anwar',
-                'username' => 'anwar_admin',
-                'password' => Hash::make('$adlifA0'),
-                'role'     => 'admin',
-                'xp'       => 0,
-                'city'     => 'Casablanca',
-                'location' => 'Casablanca, Morocco',
-            ]
-        );
+    ['email' => env('ADMIN_EMAIL')],
+    [
+        'name'     => env('ADMIN_NAME'),
+        'username' => 'anwar_admin',
+        'password' => Hash::make(env('ADMIN_PASSWORD')),
+        'role'     => 'admin',
+        'xp'       => 0,
+        'city'     => 'Casablanca',
+        'location' => 'Casablanca, Morocco',
+    ]
+);
 
         $this->command->info('✅ DevRadar seeded successfully!');
     }
