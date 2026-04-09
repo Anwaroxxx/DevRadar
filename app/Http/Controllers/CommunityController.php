@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\ContentStatusMail;
 
 class CommunityController extends Controller
 {
@@ -98,6 +99,7 @@ class CommunityController extends Controller
         $community->load(['user']);
 
         $posts = CommunityPost::where('community_id', $community->id)
+            ->where('approval_status', 'approved')
             ->with(['user', 'comments.user'])
             ->withCount('comments')
             ->orderByDesc('created_at')

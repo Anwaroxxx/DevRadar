@@ -10,7 +10,7 @@ class CommunityPost extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'community_id', 'title', 'content', 'code_snippet', 'language', 'upvotes_count'
+        'user_id', 'community_id', 'title', 'content', 'code_snippet', 'language', 'upvotes_count', 'approval_status', 'approved_by'
     ];
 
     public function user() { return $this->belongsTo(User::class)->withTrashed(); }
