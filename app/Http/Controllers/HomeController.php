@@ -12,31 +12,49 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $eventsCount     = Event::where('is_approved', true)->count();
-        $jobsCount       = JobListing::where('is_active', true)->count();
-        $communitiesCount= Community::count();
+        $user = auth()->user();
 
-        $upcomingEvents  = Event::with(['user', 'tags'])
-            ->where('is_approved', true)
-            ->where('event_date', '>=', now())
-            ->orderBy('event_date')
-            ->limit(6)
+        $stats = [
+            'xp' => $user->xp ?? 0,
+            'connections' => $user->following()->count() ?? 0,
+            'followers' => $user->followers()->count() ?? 0,
+            'pending_approvals' => Event::where('user_id', $user->id)->where('is_approved', false)->count() +
+                                   Community::where('user_id', $user->id)->where('approval_status', 'pending')->count(),
+        ];
+
+        // My Events (Live & Pending)
+        $myEvents = Event::with('tags')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(5)
             ->get();
 
-        $mapEvents = Event::where('is_approved', true)
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->with('tags')
-            ->get(['id','title','city','category','latitude','longitude','event_date']);
+        // My Communities
+        $myCommunities = Community::withCount('followers')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Recommended / Radar (Randomly grab some active stuff the user isn't part of)
+        $radarCommunities = Community::where('user_id', '!=', $user->id)
+            ->where('approval_status', 'approved')
+            ->inRandomOrder()
+            ->limit(3)
+            ->get();
 
         return Inertia::render('Home', [
-            'stats' => [
-                'events'      => $eventsCount,
-                'jobs'        => $jobsCount,
-                'communities' => $communitiesCount,
-            ],
-            'upcomingEvents' => $upcomingEvents,
-            'mapEvents'      => $mapEvents,
+            'stats'            => $stats,
+            'myEvents'         => $myEvents,
+            'myCommunities'    => $myCommunities,
+            'radarCommunities' => $radarCommunities,
+            // Keeping mapEvents strictly for the background live-map visual if needed
+            'mapEvents'        => Event::where('is_approved', true)
+                                ->whereNotNull('latitude')
+                                ->whereNotNull('longitude')
+                                ->inRandomOrder()
+                                ->limit(5)
+                                ->get(['id','latitude','longitude', 'title']),
         ]);
     }
 }
