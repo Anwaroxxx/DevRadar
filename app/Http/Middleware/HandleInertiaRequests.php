@@ -41,14 +41,19 @@ class HandleInertiaRequests extends Middleware
             ? Message::where('receiver_id', $user->id)->whereNull('read_at')->count()
             : 0;
 
+        $notifications = $user ? $user->unreadNotifications()->limit(10)->get() : [];
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
+                    'email'           => $user->email, // Explicitly exposed for the self-node
+                    'role'            => $user->role,  // Explicitly exposed for the self-node
                     'is_admin'        => $user->isAdmin(),
                     'has_ai_access'   => $user->has_ai_access,
                     'unread_dm_count' => $unreadDmCount,
+                    'notifications'   => $notifications,
                 ]) : null,
             ],
             'flash' => [

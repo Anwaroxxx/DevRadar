@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
-import { AlertCircle, Search, Filter } from 'lucide-react';
+import { 
+    AlertCircle, Search, Filter, Shield, 
+    Terminal, Clock, Database, ChevronRight, Activity,
+    Lock, User
+} from 'lucide-react';
 
 export default function AdminAuditLogs({ logs, admins, filters }) {
     const [search, setSearch] = useState(filters.action || '');
@@ -18,169 +22,184 @@ export default function AdminAuditLogs({ logs, admins, filters }) {
         router.get('/admin/audit-logs', params, { preserveState: true });
     };
 
-    const getActionBadgeColor = (action) => {
-        if (action.includes('ban') || action.includes('delete')) return 'text-red-500 border-red-500/30 bg-red-500/10';
-        if (action.includes('suspend') || action.includes('reject')) return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10';
-        if (action.includes('approve') || action.includes('verify')) return 'text-green-500 border-green-500/30 bg-green-500/10';
-        return 'text-primary border-primary/30 bg-primary/10';
-    };
-
-    const formatValue = (value) => {
-        if (typeof value === 'object') return JSON.stringify(value).substring(0, 50) + '...';
-        return String(value).substring(0, 50);
+    const getActionTheme = (action) => {
+        if (action.includes('ban') || action.includes('delete') || action.includes('reject')) 
+            return 'text-red-500 border-red-500/30 bg-red-500/10';
+        if (action.includes('approve') || action.includes('verify') || action.includes('reactivate')) 
+            return 'text-primary border-primary/30 bg-primary/10';
+        return 'text-blue-400 border-blue-400/30 bg-blue-400/10';
     };
 
     return (
         <HackerLayout>
-            <Head title="Admin — Audit Logs" />
-            <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-primary/30 pb-4">
-                    <div className="flex items-center gap-3">
-                        <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
-                        <span className="text-border">/</span>
-                        <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <AlertCircle className="w-6 h-6 text-primary" /> AUDIT_LOGS
-                        </h1>
+            <Head title="Audit Logs" />
+            
+            <div className="max-w-[1600px] mx-auto px-4 py-8 space-y-6 font-mono">
+                
+                {/* HEADER */}
+                <div className="flex items-center justify-between bg-black/40 border border-primary/20 p-6 relative overflow-hidden">
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="p-3 border border-primary bg-primary/10">
+                            <Activity className="w-6 h-6 text-primary animate-pulse" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black uppercase tracking-widest text-foreground">
+                                FORENSIC_ENGINE // <span className="text-primary italic">AUDIT_TRAIL</span>
+                            </h1>
+                            <div className="text-[10px] text-primary/60 flex items-center gap-4 mt-1">
+                                <span className="flex items-center gap-1.5 font-black uppercase"><Terminal className="w-3 h-3" /> Logs: Online</span>
+                                <span className="flex items-center gap-1.5 opacity-40 uppercase"><Lock className="w-3 h-3" /> Status: Verified</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="text-right text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed">
+                        Session_Monitoring: HIGH_VISIBILITY<br/>
+                        Trace_Depth: UNLIMITED_RETENTION
                     </div>
                 </div>
 
-                {/* Filters */}
-                <form onSubmit={handleFilter} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                {/* FILTER HUB */}
+                <form onSubmit={handleFilter} className="bg-black/40 border border-primary/10 p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="relative col-span-2">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
                             <input
                                 type="text"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                placeholder="Search action..."
-                                className="w-full bg-card border border-primary/30 pl-9 pr-4 py-2 text-sm font-mono focus:outline-none focus:border-primary transition-all"
+                                placeholder="Filter by action or details..."
+                                className="w-full bg-black border border-primary/20 pl-10 pr-4 py-3 text-[10px] text-primary focus:border-primary outline-none transition-all"
                             />
                         </div>
 
                         <select
                             value={selectedAdmin}
                             onChange={e => setSelectedAdmin(e.target.value)}
-                            className="bg-card border border-primary/30 px-4 py-2 text-sm font-mono focus:outline-none focus:border-primary transition-all"
+                            className="bg-black border border-primary/20 px-4 py-3 text-[10px] text-primary focus:border-primary outline-none uppercase"
                         >
-                            <option value="">All Admins</option>
-                            {admins.map(admin => <option key={admin.id} value={admin.id}>{admin.name}</option>)}
+                            <option value="">All Administrators</option>
+                            {admins.map(admin => <option key={admin.id} value={admin.id}>{admin.name.toUpperCase()}</option>)}
                         </select>
 
                         <select
                             value={selectedType}
                             onChange={e => setSelectedType(e.target.value)}
-                            className="bg-card border border-primary/30 px-4 py-2 text-sm font-mono focus:outline-none focus:border-primary transition-all"
+                            className="bg-black border border-primary/20 px-4 py-3 text-[10px] text-primary focus:border-primary outline-none uppercase"
                         >
                             <option value="">All Types</option>
-                            <option value="user">User</option>
-                            <option value="event">Event</option>
-                            <option value="job">Job</option>
-                            <option value="marketplace">Marketplace</option>
-                            <option value="feature_flag">Feature Flag</option>
+                            {['user', 'event', 'job', 'community', 'marketplace', 'feature_flag'].map(t => (
+                                <option key={t} value={t}>{t.toUpperCase()}</option>
+                            ))}
                         </select>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full bg-primary/20 text-primary border border-primary px-4 py-2 text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-2"
-                    >
-                        <Filter className="w-4 h-4" /> APPLY_FILTERS
-                    </button>
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            className="bg-primary/20 text-primary border border-primary px-8 py-2 text-[10px] font-black uppercase hover:bg-primary hover:text-black transition-all"
+                        >
+                            Refresh Logs
+                        </button>
+                    </div>
                 </form>
 
-                {/* Logs Table */}
-                <div className="border border-primary/30 overflow-hidden">
-                    <table className="w-full text-sm font-mono">
+                {/* LOG DATA GRID */}
+                <div className="bg-black/40 border border-primary/10 overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
-                            <tr className="border-b border-primary/30 bg-primary/5">
-                                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest text-muted-foreground">Timestamp</th>
-                                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest text-muted-foreground">Admin</th>
-                                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest text-muted-foreground">Action</th>
-                                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest text-muted-foreground">Target</th>
-                                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest text-muted-foreground">Changes</th>
+                            <tr className="bg-primary/5 text-[9px] uppercase tracking-[0.2em] text-primary/60 font-black">
+                                <th className="px-6 py-4 border-b border-primary/10 w-48">Timestamp</th>
+                                <th className="px-6 py-4 border-b border-primary/10 w-48">Operator</th>
+                                <th className="px-6 py-4 border-b border-primary/10 w-64">Action</th>
+                                <th className="px-6 py-4 border-b border-primary/10 w-48">Target_Ref</th>
+                                <th className="px-6 py-4 border-b border-primary/10">Details</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border/50">
-                            {logs.data.map(log => (
+                        <tbody className="divide-y divide-primary/5">
+                            {logs.data.map((log, idx) => (
                                 <motion.tr
                                     key={log.id}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="hover:bg-primary/5 transition-colors"
+                                    transition={{ delay: idx * 0.01 }}
+                                    className="hover:bg-primary/[0.03] transition-colors group"
                                 >
-                                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                                        {new Date(log.created_at).toLocaleString()}
+                                    <td className="px-6 py-4 text-[9px] text-muted-foreground whitespace-nowrap italic font-mono tabular-nums uppercase">
+                                        [{new Date(log.created_at).toLocaleString().replace(',', '')}]
                                     </td>
-                                    <td className="px-4 py-3 text-sm">
-                                        <div className="font-bold">{log.admin.name}</div>
-                                        <div className="text-xs text-muted-foreground">@{log.admin.username}</div>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 border border-primary/20 bg-primary/5 flex items-center justify-center text-[8px] font-black font-mono">
+                                                {log.admin.name[0]}
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase">{log.admin.username}</div>
+                                        </div>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <span className={`text-[10px] px-2 py-1 border font-bold uppercase ${getActionBadgeColor(log.action)}`}>
+                                    <td className="px-6 py-4">
+                                        <span className={`text-[8px] px-2 py-0.5 border font-black uppercase tracking-tighter ${getActionTheme(log.action)}`}>
                                             {log.action.replace(/_/g, ' ')}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-xs">
-                                        {log.target_type && (
-                                            <div>
-                                                <div className="text-muted-foreground">{log.target_type}</div>
-                                                {log.target_id && <div className="text-primary font-bold">#{log.target_id}</div>}
-                                            </div>
-                                        )}
-                                        {!log.target_type && <span className="text-muted-foreground">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-xs max-w-xs">
-                                        {log.changes ? (
-                                            <div className="text-muted-foreground font-mono truncate">
-                                                {JSON.stringify(log.changes).substring(0, 40)}...
+                                    <td className="px-6 py-4">
+                                        {log.target_type ? (
+                                            <div className="text-[9px] uppercase font-mono">
+                                                <span className="text-muted-foreground">{log.target_type}</span>
+                                                <span className="text-primary font-black ml-1">#{log.target_id}</span>
                                             </div>
                                         ) : (
-                                            <span className="text-muted-foreground">—</span>
+                                            <span className="text-muted-foreground opacity-30">—</span>
                                         )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="max-w-xs xl:max-w-lg truncate text-[9px] text-muted-foreground/60 font-mono italic bg-black/20 p-2 border-l border-primary/10 group-hover:text-primary/60 transition-colors">
+                                            {log.description || (log.changes ? JSON.stringify(log.changes) : 'SYSTEM_GENERATED_EVENT')}
+                                        </div>
                                     </td>
                                 </motion.tr>
                             ))}
                         </tbody>
                     </table>
+
+                    {logs.data.length === 0 && (
+                        <div className="p-20 text-center space-y-4 opacity-20">
+                            <Database className="w-12 h-12 mx-auto" />
+                            <p className="text-[10px] uppercase font-black tracking-[0.5em]">No log entries found.</p>
+                        </div>
+                    )}
                 </div>
 
-                {logs.data.length === 0 && (
-                    <div className="border border-border/50 p-6 text-center text-muted-foreground text-sm">
-                        No audit logs found. Admin actions are logged here.
+                {/* PAGINATION */}
+                <div className="flex items-center justify-between p-6 bg-black/40 border border-primary/10">
+                    <div className="text-[10px] font-black text-primary/40 uppercase tracking-widest">
+                        Page {logs.current_page} // {logs.last_page}
                     </div>
-                )}
-
-                {/* Pagination */}
-                <div className="flex items-center justify-between">
-                    <div className="text-xs font-mono text-muted-foreground">
-                        Page {logs.current_page} of {logs.last_page}
-                    </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                         {logs.links.map((link, idx) => (
                             <Link
                                 key={idx}
                                 href={link.url || '#'}
-                                disabled={!link.url}
-                                className={`px-3 py-1 border text-xs font-bold transition-all ${
-                                    link.active
-                                        ? 'bg-primary text-primary-foreground border-primary'
-                                        : 'border-border text-muted-foreground hover:border-primary/50'
+                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                className={`px-4 py-1.5 border text-[9px] font-black transition-all ${
+                                    link.active 
+                                    ? 'bg-primary text-black border-primary' 
+                                    : 'border-primary/10 text-primary hover:border-primary/40'
                                 }`}
-                            >
-                                {link.label.replace('&laquo;', '←').replace('&raquo;', '→')}
-                            </Link>
+                            />
                         ))}
                     </div>
                 </div>
 
-                {/* Info */}
-                <div className="border border-yellow-500/30 bg-yellow-500/5 p-4 text-xs text-muted-foreground">
-                    <span className="font-bold text-yellow-500">ℹ️ Note:</span> All admin actions are logged here including IP address, user agent, and changes made. This is crucial for security and compliance auditing.
+                {/* FOOTER ADVISORY */}
+                <div className="bg-primary/5 border border-primary/20 p-4 flex items-center gap-4 text-[9px] text-primary italic uppercase tracking-widest">
+                    <Shield className="w-4 h-4 shrink-0" />
+                    <span>Integrity Advisory: All administrative actions are timestamped and immutable. Temporal anomalies in logs should be reported to the Security Core immediately. Session identity verified by E2E encryption.</span>
                 </div>
             </div>
+
+            <style jsx>{`
+                .tabular-nums { font-variant-numeric: tabular-nums; }
+            `}</style>
         </HackerLayout>
     );
 }

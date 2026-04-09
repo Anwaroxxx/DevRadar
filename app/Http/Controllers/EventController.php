@@ -71,9 +71,8 @@ class EventController extends Controller
         ]);
 
         $event = $request->user()->events()->create(array_merge($data, [
-            'approval_status' => 'pending',
-            // Keep legacy flag consistent if present.
-            'is_approved' => false,
+            'approval_status' => $request->user()->role === 'admin' ? 'approved' : 'pending',
+            'is_approved' => $request->user()->role === 'admin',
         ]));
 
         if (!empty($data['tags'])) {
@@ -83,8 +82,6 @@ class EventController extends Controller
             $event->tags()->sync($tagIds);
         }
 
-        $request->user()->awardXp(30, 'submitted_event', "Submitted event: {$event->title}", $event);
-
         if (!empty($request->user()->email)) {
             Mail::to($request->user()->email)->queue(
                 new ContentStatusMail('event', $event->title, 'pending')
@@ -92,6 +89,40 @@ class EventController extends Controller
         }
 
         return redirect()->route('events.show', $event)->with('success', '+30 XP earned for submitting event!');
+    }
+
+    public function edit(Event $event)
+    {
+        $this->authorize('update', $event);
+        return Inertia::render('Events/Edit', [
+            'event' => $event->load('tags')
+        ]);
+    }
+
+    public function update(Request $request, Event $event)
+    {
+        $this->authorize('update', $event);
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string',
+            'city'        => 'required|string',
+            'organizer'   => 'required|string',
+            'website'     => 'nullable|url',
+            'event_date'  => 'required|date',
+            'category'    => 'required|string',
+            'latitude'    => 'nullable|numeric',
+            'longitude'   => 'nullable|numeric',
+        ]);
+
+        $event->update($data);
+        return redirect()->route('events.show', $event)->with('success', 'Post updated successfully.');
+    }
+
+    public function destroy(Event $event)
+    {
+        $this->authorize('delete', $event);
+        $event->delete();
+        return redirect()->route('events.index')->with('success', 'Post deleted successfully.');
     }
 
     public function toggleSave(Event $event, Request $request)

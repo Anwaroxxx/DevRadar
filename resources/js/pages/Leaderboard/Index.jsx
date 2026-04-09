@@ -9,9 +9,9 @@ export default function LeaderboardIndex({ topContributors, eventCreators, commu
             
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-12 border-b border-border pb-4">
-                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; GLOBAL_RANKINGS</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; Global Leaderboard</h1>
                     <div className="text-sm font-mono text-primary animate-pulse border border-primary px-3 py-1 bg-primary/10">
-                        LIVE_FEED //
+                        Live Data //
                     </div>
                 </div>
 
@@ -20,7 +20,7 @@ export default function LeaderboardIndex({ topContributors, eventCreators, commu
                     <div className="bg-card border border-primary/30 relative overflow-hidden">
                         <div className="bg-primary/10 py-4 px-6 border-b border-primary/30 flex items-center gap-3">
                             <Trophy className="w-6 h-6 text-primary" />
-                            <h2 className="text-xl font-bold uppercase tracking-widest text-primary">Highest_XP</h2>
+                            <h2 className="text-xl font-bold uppercase tracking-widest text-primary">Top Earners</h2>
                         </div>
                         <div className="p-0">
                             {topContributors.map((user, index) => (
@@ -53,7 +53,7 @@ export default function LeaderboardIndex({ topContributors, eventCreators, commu
                     <div className="bg-card border border-primary/30 relative overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
                         <div className="bg-card py-4 px-6 border-b border-border flex items-center gap-3">
                             <Star className="w-5 h-5 text-primary" />
-                            <h2 className="text-lg font-bold uppercase tracking-widest">Master_Nodes (Events)</h2>
+                            <h2 className="text-lg font-bold uppercase tracking-widest">Event Organizers</h2>
                         </div>
                         <div className="p-0">
                             {eventCreators.map((user, index) => (
@@ -65,7 +65,7 @@ export default function LeaderboardIndex({ topContributors, eventCreators, commu
                                         </Link>
                                     </div>
                                     <div className="text-xs font-mono text-primary border border-primary/30 px-2 bg-primary/10">
-                                        {user.events_count} INIT
+                                        {user.events_count} Events
                                     </div>
                                 </div>
                             ))}
@@ -76,7 +76,7 @@ export default function LeaderboardIndex({ topContributors, eventCreators, commu
                     <div className="bg-card border border-primary/30 relative overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
                         <div className="bg-card py-4 px-6 border-b border-border flex items-center gap-3">
                             <Award className="w-5 h-5 text-primary" />
-                            <h2 className="text-lg font-bold uppercase tracking-widest">Cluster_Admins (Comm)</h2>
+                            <h2 className="text-lg font-bold uppercase tracking-widest">Community Leaders</h2>
                         </div>
                         <div className="p-0">
                             {communityBuilders.map((user, index) => (

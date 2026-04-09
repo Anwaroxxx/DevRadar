@@ -12,7 +12,7 @@ class Event extends Model
     protected $fillable = [
         'user_id', 'title', 'description', 'city', 'organizer',
         'website', 'event_date', 'category', 'latitude', 'longitude',
-        'image', 'is_approved', 'attendees_count',
+        'image', 'is_approved', 'attendees_count', 'approval_status', 'approved_by', 'rejection_reason',
     ];
 
     protected $casts = [
@@ -22,7 +22,7 @@ class Event extends Model
         'longitude'   => 'float',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user() { return $this->belongsTo(User::class)->withTrashed(); }
     public function tags() { return $this->belongsToMany(Tag::class, 'event_tag'); }
     public function attendees() {
         return $this->belongsToMany(User::class, 'event_user')

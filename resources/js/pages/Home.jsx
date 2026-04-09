@@ -60,7 +60,7 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
 
     return (
         <HackerLayout>
-            <Head title="Home — Intelligence Hub" />
+            <Head title="Dashboard | DevRadar" />
 
             <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
 
@@ -92,7 +92,7 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                             <div className="flex items-center gap-2 mb-4">
                                 <span className="h-0.5 w-12 bg-primary animate-pulse" />
                                 <span className="text-primary font-mono text-xs font-black tracking-[0.3em] uppercase">
-                                    SYSTEM_PROTOCOL: ACTIVE
+                                    System Status: Online
                                 </span>
                             </div>
 
@@ -108,16 +108,16 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                             </h1>
 
                             <p className="text-lg text-muted-foreground mb-10 max-w-2xl font-mono leading-relaxed border-l-2 border-primary/20 pl-6 py-2">
-                                The centralized intelligence hub for the{' '}
+                                The centralized platform for the{' '}
                                 <span className="text-primary font-bold">Moroccan Developer Network</span>.{' '}
-                                Track nodes, execute career updates, and synchronize with the cluster in real-time.
+                                Discover events, find job opportunities, and join local communities in real-time.
                             </p>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
                                 {[
-                                    { value: stats?.events,      label: 'Active_Events',     Icon: Activity  },
-                                    { value: stats?.jobs,        label: 'Open_Job_Pings',    Icon: Briefcase },
-                                    { value: stats?.communities, label: 'Sync_Active_Nodes', Icon: Cpu       },
+                                    { value: stats?.events,      label: 'Upcoming Events',   Icon: Activity  },
+                                    { value: stats?.jobs,        label: 'Job Opportunities', Icon: Briefcase },
+                                    { value: stats?.communities, label: 'Active Communities', Icon: Cpu       },
                                 ].map(({ value, label, Icon }) => (
                                     <div key={label} className="border border-primary/20 p-6 bg-primary/5 relative hover:border-primary/60 transition-all">
                                         <div className="text-4xl font-black text-primary"><Counter value={value ?? 0} /></div>
@@ -132,20 +132,20 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                         <div className="space-y-4" style={{ width: isLg ? SIDEBAR_W : '100%' }}>
                             <div className="bg-black/60 border border-primary/30 p-4 font-mono text-xs">
                                 <div className="flex items-center gap-2 mb-4 text-primary font-bold border-b border-primary/20 pb-2">
-                                    <Terminal className="w-4 h-4" /> QUICK_ACTIONS.EXE
+                                    <Terminal className="w-4 h-4" /> Quick Actions
                                 </div>
                                 <div className="space-y-2">
                                     {auth?.user?.is_admin && (
                                         <Link href="/admin" className="flex items-center justify-between p-2 border border-yellow-400/50 hover:border-yellow-400 hover:bg-yellow-400/10 transition-all text-yellow-400">
-                                            <span>&gt; ADMIN_PANEL</span>
+                                            <span>&gt; Admin Panel</span>
                                             <Shield className="w-3 h-3" />
                                         </Link>
                                     )}
                                     {[
-                                        { href: '/events/create',      label: 'INIT_EVENT',    icon: <Plus className="w-3 h-3 text-primary" />     },
-                                        { href: '/communities/create', label: 'SYNC_CLUSTER',  icon: <Plus className="w-3 h-3 text-primary" />     },
-                                        { href: '/jobs/create',        label: 'PUSH_CAREER',   icon: <Plus className="w-3 h-3 text-primary" />     },
-                                        { href: '/ai/chat',            label: 'AI_ASSIST',     icon: <Activity className="w-3 h-3 text-primary" /> },
+                                        { href: '/events/create',      label: 'Create Event', icon: <Plus className="w-3 h-3 text-primary" />     },
+                                        { href: '/communities/create', label: 'Create Community', icon: <Plus className="w-3 h-3 text-primary" />     },
+                                        { href: '/jobs/create',        label: 'Post a Job',      icon: <Plus className="w-3 h-3 text-primary" />     },
+                                        { href: '/ai/chat',            label: 'AI Assistant', icon: <Activity className="w-3 h-3 text-primary" /> },
                                     ].map(({ href, label, icon }) => (
                                         <Link key={href} href={href} className="flex items-center justify-between p-2 border border-primary/20 hover:border-primary hover:bg-primary/10 transition-all">
                                             <span>&gt; {label}</span>
@@ -155,64 +155,66 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                                 </div>
                             </div>
                             <div className="flex items-center justify-between px-4 py-2 bg-primary/10 border border-primary/30 text-[10px] font-mono">
-                                <span className="text-primary animate-pulse">STATUS: ONLINE</span>
+                                <span className="text-primary animate-pulse">Platform Status: Online</span>
                                 <span className="text-primary/60">LVL: {auth?.user?.xp ?? 0} XP</span>
                             </div>
                         </div>
                     </div>
                 </motion.section>
 
-                {/* ── Map ── */}
+                {/* ── Dashboard Stats ── */}
                 <section>
-                    <div className="flex justify-between items-center mb-4 border-b border-primary/30 pb-2">
+                    <div className="flex justify-between items-center mb-6 border-b border-primary/30 pb-4">
                         <div className="flex items-center gap-3 min-w-0">
+                            <Activity className="w-5 h-5 text-primary flex-shrink-0" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter text-primary neon-text truncate">
-                                [ RADAR_OS // GRID_VIEW ]
+                                [ Recent Activity ]
                             </h2>
-                            <div className="hidden md:flex gap-3 text-[10px] font-mono text-primary/40 flex-shrink-0">
-                                <span>SEC_LAYER: 0x4F</span>
-                                <span>PING: 14ms</span>
-                                <span>UPTIME: 99.9%</span>
+                        </div>
+                        <Link 
+                            href="/cluster-zone" 
+                            className="group flex items-center gap-3 px-4 py-2 border border-primary/40 bg-primary/5 hover:bg-primary transition-all text-primary hover:text-black font-mono text-xs font-black uppercase"
+                        >
+                            <MapPin className="w-3 h-3 group-hover:animate-bounce" />
+                            Open Map View
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-fit">
+                        {/* Live Activity Stream */}
+                        <div className="border border-primary/20 bg-black/40 p-6 flex flex-col space-y-4">
+                            <div className="text-[10px] text-primary/40 font-mono uppercase tracking-[0.2em] border-b border-primary/10 pb-2">Recent Platform Activity</div>
+                            <div className="space-y-4 font-mono text-xs">
+                                {upcomingEvents.slice(0, 3).map((event, i) => (
+                                    <div key={i} className="flex gap-4 items-start border-l-2 border-primary/10 pl-4 hover:border-primary transition-colors py-1">
+                                        <div className="text-primary/40">[{new Date(event.created_at).toLocaleTimeString()}]</div>
+                                        <div>
+                                            <div className="text-foreground uppercase font-bold">{event.title}</div>
+                                            <div className="text-muted-foreground text-[10px]">LOC: {event.city.toUpperCase()} // Approved</div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="pt-4 text-[9px] text-primary/30 animate-pulse italic">
+                                    &gt;&gt; Monitoring local activity...
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-mono ml-4 flex-shrink-0">
-                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            <span className="text-primary/60 hidden sm:inline">SCANNING_SATELLITE_FEED...</span>
-                        </div>
-                    </div>
-                    <div className="relative">
-                        <div className="absolute -inset-1 border border-primary/20 pointer-events-none z-50" />
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary z-50" />
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary z-50" />
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary z-50" />
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary z-50" />
-                        <div className="border border-primary/50 h-[500px] w-full relative shadow-[0_0_30px_rgba(34,197,94,0.1)] overflow-hidden">
-                            <div className="absolute inset-0 pointer-events-none z-[400] bg-[linear-gradient(transparent_0%,rgba(34,197,94,0.05)_50%,transparent_100%)] bg-[length:100%_200%] animate-[scan_4s_linear_infinite]" />
-                            <MapContainer center={[31.7917, -7.0926]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                                <TileLayer
-                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                                />
-                                {mapEvents.filter(e => e.latitude && e.longitude).map(event => (
-                                    <Marker key={event.id} position={[event.latitude, event.longitude]} icon={hackerIcon}>
-                                        <Popup>
-                                            <div className="font-mono bg-black text-primary p-3 border-2 border-primary shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                                                <div className="text-[10px] text-primary/60 mb-1 border-b border-primary/20 pb-1 flex justify-between">
-                                                    <span>TARGET_IDENTIFIED</span><span>ID:{event.id}</span>
-                                                </div>
-                                                <div className="font-black text-lg uppercase mb-2 tracking-tight">{event.title}</div>
-                                                <div className="space-y-1 text-xs mb-4">
-                                                    <div className="flex gap-2"><span>CITY:</span><span className="text-white">{event.city}</span></div>
-                                                    <div className="flex gap-2"><span>TYPE:</span><span className="text-white">{event.category}</span></div>
-                                                </div>
-                                                <Link href={`/events/${event.id}`} className="block w-full text-center bg-primary text-black font-black uppercase text-xs py-2 hover:bg-white transition-colors">
-                                                    &gt; EXECUTE_OVERRIDE
-                                                </Link>
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                ))}
-                            </MapContainer>
+
+                        {/* Network Stats / Info */}
+                        <div className="border border-primary/20 bg-black/40 p-6 flex flex-col">
+                            <div className="text-[10px] text-primary/40 font-mono uppercase tracking-[0.2em] border-b border-primary/10 pb-2 mb-4">Network Guidelines</div>
+                            <div className="space-y-3">
+                                <Link href="/leaderboard" className="flex items-center justify-between p-3 border border-primary/10 hover:border-primary/40 bg-primary/5 group transition-all">
+                                    <div className="flex items-center gap-3 font-mono text-xs">
+                                        <Shield className="w-4 h-4 text-primary" />
+                                        <span>Leaderboard</span>
+                                    </div>
+                                    <span className="text-[10px] text-primary group-hover:translate-x-1 transition-transform">View Ranking &gt;</span>
+                                </Link>
+                                <div className="p-4 border border-dashed border-primary/10 text-[10px] text-muted-foreground leading-relaxed uppercase">
+                                    Engagement levels are determined by community contributions. Posts are reviewed for quality before appearing on the public feed.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -221,7 +223,7 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                 <section>
                     <div className="flex items-center gap-3 mb-6">
                         <Database className="w-5 h-5 text-primary flex-shrink-0" />
-                        <h2 className="text-2xl font-black uppercase tracking-tighter text-foreground">&gt; Upcoming_Tasks</h2>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter text-foreground">&gt; Upcoming Events</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {upcomingEvents.map((event, idx) => (
@@ -239,7 +241,7 @@ export default function Home({ stats, upcomingEvents, mapEvents, auth }) {
                                 <div className="flex justify-between items-center text-[10px] font-mono border-t border-border/50 pt-4 mt-auto">
                                     <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {event.city}</span>
                                     <Link href={`/events/${event.id}`} className="px-3 py-1 border border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-all">
-                                        [ACCESS]
+                                        [View Details]
                                     </Link>
                                 </div>
                             </motion.div>

@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { Users, Globe, UserPlus, Fingerprint, Plus, User } from 'lucide-react';
@@ -12,17 +12,17 @@ export default function CommunitiesIndex({ communities, filters }) {
             
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8 border-b border-border pb-4">
-                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; ACTIVE_CLUSTERS</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; Communities</h1>
                     {auth.user && (
                         <Link href="/communities/create" className="bg-primary/20 text-primary border border-primary px-6 py-2 font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
-                             <Plus className="w-4 h-4" /> INIT_CLUSTER
+                             <Plus className="w-4 h-4" /> Create Community
                         </Link>
                     )}
                 </div>
 
                 {/* Filters */}
                 <div className="bg-card border border-primary/20 p-4 mb-8 font-mono text-sm flex gap-4 overflow-x-auto">
-                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">MOD_SELECT:</div>
+                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">Category:</div>
                     <Link href="/communities" className={`px-3 py-1 border ${!filters.category ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>ALL</Link>
                     <Link href="/communities?category=frontend" className={`px-3 py-1 border ${filters.category === 'frontend' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>FRONTEND</Link>
                     <Link href="/communities?category=backend" className={`px-3 py-1 border ${filters.category === 'backend' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>BACKEND</Link>
@@ -50,14 +50,17 @@ export default function CommunitiesIndex({ communities, filters }) {
                                     sys.{community.category}
                                 </div>
                                 <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground">
-                                     <Users className="w-3 h-3" /> {community.member_count} nodes
+                                     <Users className="w-3 h-3" /> {community.member_count} members
                                 </div>
                             </div>
 
-                            <h2 className="text-2xl font-bold mb-2 break-words group-hover:text-primary">{community.name}</h2>
+                            <Link href={`/communities/${community.id}`}>
+                                <h2 className="text-2xl font-bold mb-2 break-words group-hover:text-primary transition-colors cursor-pointer">{community.name}</h2>
+                            </Link>
+
                                                         <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-4 opacity-70 flex-wrap">
                                  <Fingerprint className="w-3 h-3" /> ID: {community.id.toString().padStart(6, '0')}
-                                {community.city && <span className="ml-2 border-l border-border pl-2">LOC: {community.city}</span>}
+                                {community.city && <span className="ml-2 border-l border-border pl-2">Location: {community.city}</span>}
                                 {community.user && (
                                     <span className="ml-2 border-l border-border pl-2 flex items-center gap-1">
                                         <User className="w-3 h-3 text-primary" />
@@ -79,19 +82,20 @@ export default function CommunitiesIndex({ communities, filters }) {
                                 
                                 <div className="flex gap-2">
                                     {auth.user ? (
-                                        <form action={`/communities/${community.id}/follow`} method="POST">
-                                            <input type="hidden" name="_token" value={usePage().props.csrf_token} />
-                                            <button className={`p-2 border transition-all ${isFollowing ? 'border-primary bg-primary/20 text-primary' : 'border-border text-muted-foreground hover:border-primary hover:text-primary bg-card/50'}`} title={isFollowing ? 'Disconnect' : 'Connect to Node'}>
-                                                <UserPlus className="w-4 h-4" />
-                                            </button>
-                                        </form>
+                                        <button 
+                                            onClick={() => router.post(`/communities/${community.id}/follow`, {}, { preserveScroll: true })}
+                                            className={`p-2 border transition-all ${isFollowing ? 'border-primary bg-primary/20 text-primary' : 'border-border text-muted-foreground hover:border-primary hover:text-primary bg-card/50'}`} 
+                                            title={isFollowing ? 'Unfollow' : 'Join Community'}
+                                        >
+                                            <UserPlus className="w-4 h-4" />
+                                        </button>
                                     ) : null}
                                     <a 
                                         href={community.join_link} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="p-2 border border-primary text-primary hover:bg-primary hover:text-primary-foreground bg-primary/10 transition-colors"
-                                        title="External Gateway"
+                                        title="External Link"
                                     >
                                         <Globe className="w-4 h-4" />
                                     </a>

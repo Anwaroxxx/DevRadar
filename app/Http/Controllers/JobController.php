@@ -49,12 +49,13 @@ class JobController extends Controller
             'apply_link'  => 'required|url',
             'tech_stack'  => 'nullable|array',
             'salary_range'=> 'nullable|string',
+            'latitude'    => 'nullable|numeric',
+            'longitude'   => 'nullable|numeric',
         ]);
 
         $job = $request->user()->jobListings()->create(array_merge($data, [
-            'approval_status' => 'pending',
+            'approval_status' => $request->user()->role === 'admin' ? 'approved' : 'pending',
         ]));
-        $request->user()->awardXp(50, 'posted_job', "Posted job: {$job->title}", $job);
 
         if (!empty($request->user()->email)) {
             Mail::to($request->user()->email)->queue(
@@ -62,6 +63,40 @@ class JobController extends Controller
             );
         }
 
-        return redirect()->route('jobs.index')->with('success', '+50 XP earned for posting a job!');
+        return redirect()->route('jobs.index')->with('success', 'Post submitted for approval!');
+    }
+
+    public function edit(JobListing $job)
+    {
+        $this->authorize('update', $job);
+        return Inertia::render('Jobs/Edit', ['job' => $job]);
+    }
+
+    public function update(Request $request, JobListing $job)
+    {
+        $this->authorize('update', $job);
+        $data = $request->validate([
+            'title'       => 'required|string|max:255',
+            'company'     => 'required|string',
+            'city'        => 'required|string',
+            'type'        => 'required|in:full-time,internship,freelance',
+            'is_remote'   => 'boolean',
+            'description' => 'required|string',
+            'apply_link'  => 'required|url',
+            'tech_stack'  => 'nullable|array',
+            'salary_range'=> 'nullable|string',
+            'latitude'    => 'nullable|numeric',
+            'longitude'   => 'nullable|numeric',
+        ]);
+
+        $job->update($data);
+        return redirect()->route('jobs.index')->with('success', 'Post updated successfully.');
+    }
+
+    public function destroy(JobListing $job)
+    {
+        $this->authorize('delete', $job);
+        $job->delete();
+        return redirect()->route('jobs.index')->with('success', 'Post removed successfully.');
     }
 }

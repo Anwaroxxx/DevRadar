@@ -44,7 +44,7 @@ export default function AdminXpEconomy({ rewards, stats }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Zap className="w-6 h-6 text-primary" /> XP_ECONOMY
+                            <Zap className="w-6 h-6 text-primary" /> XP Economy
                         </h1>
                     </div>
                 </div>
@@ -71,7 +71,7 @@ export default function AdminXpEconomy({ rewards, stats }) {
                         onClick={() => setCreating(true)}
                         className="w-full border border-primary/50 text-primary px-4 py-3 font-bold uppercase hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
                     >
-                        <Plus className="w-4 h-4" /> CREATE_NEW_REWARD
+                        <Plus className="w-4 h-4" /> Create New Reward
                     </button>
                 ) : (
                     <motion.div

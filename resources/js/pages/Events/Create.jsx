@@ -3,6 +3,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { Terminal, Calendar, MapPin, Globe, Save, X, Hash } from 'lucide-react';
 import { motion } from 'framer-motion';
+import MapPicker from '@/components/MapPicker';
 
 export default function CreateEvent() {
     const { data, setData, post, processing, errors } = useForm({
@@ -38,7 +39,7 @@ export default function CreateEvent() {
 
     return (
         <HackerLayout>
-            <Head title="Initialize Event" />
+            <Head title="Create New Event" />
             
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="flex items-center gap-4 mb-8 border-b border-primary/30 pb-4">
@@ -47,11 +48,11 @@ export default function CreateEvent() {
                     </div>
                     <div>
                         <h1 className="text-4xl font-black uppercase tracking-tighter text-foreground leading-none">
-                            INIT_EVENT_NODE
+                            Create Event
                         </h1>
                         <div className="text-xs font-mono text-primary/60 mt-2 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                            AWAITING_INPUT_STREAM // ENCRYPTION_ACTIVE
+                            Fill in the details below
                         </div>
                     </div>
                 </div>
@@ -62,12 +63,12 @@ export default function CreateEvent() {
                         <section className="bg-card border border-primary/20 p-6 relative group overflow-hidden">
                             <div className="absolute top-0 right-0 p-2 opacity-10">0x01</div>
                             <h2 className="text-primary font-bold uppercase mb-4 text-xs tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-primary"></span> Primary_Identification
+                                <span className="w-1.5 h-1.5 bg-primary"></span> Basic Information
                             </h2>
                             
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Node_Title</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Event Title</label>
                                     <input
                                         type="text"
                                         value={data.title}
@@ -80,7 +81,7 @@ export default function CreateEvent() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Mission_Parameters (Description)</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Description</label>
                                     <textarea
                                         value={data.description}
                                         onChange={e => setData('description', e.target.value)}
@@ -97,12 +98,12 @@ export default function CreateEvent() {
                         <section className="bg-card border border-primary/20 p-6 relative">
                              <div className="absolute top-0 right-0 p-2 opacity-10">0x02</div>
                             <h2 className="text-primary font-bold uppercase mb-4 text-xs tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-primary"></span> Spatio_Temporal_Loc
+                                <span className="w-1.5 h-1.5 bg-primary"></span> Location & Date
                             </h2>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">City_Zone</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">City</label>
                                     <input
                                         type="text"
                                         value={data.city}
@@ -113,7 +114,7 @@ export default function CreateEvent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Execution_Date</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Event Date</label>
                                     <input
                                         type="date"
                                         value={data.event_date}
@@ -124,29 +125,19 @@ export default function CreateEvent() {
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Latitude</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        value={data.latitude}
-                                        onChange={e => setData('latitude', e.target.value)}
-                                        className="w-full bg-black/40 border-b border-primary/30 p-2 text-foreground focus:outline-none focus:border-primary transition-all text-sm"
-                                        placeholder="33.57"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Longitude</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        value={data.longitude}
-                                        onChange={e => setData('longitude', e.target.value)}
-                                        className="w-full bg-black/40 border-b border-primary/30 p-2 text-foreground focus:outline-none focus:border-primary transition-all text-sm"
-                                        placeholder="-7.58"
-                                    />
-                                </div>
+                            <div className="mt-4">
+                                <label className="block text-[10px] text-muted-foreground uppercase mb-2 flex justify-between">
+                                    <span>Exact Location on Map</span>
+                                    <span className="text-primary/60 text-[8px]">[ Click map to set ]</span>
+                                </label>
+                                <MapPicker 
+                                    height="200px"
+                                    initialValue={data.latitude && data.longitude ? { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) } : null}
+                                    onChange={(pos) => {
+                                        setData(d => ({ ...d, latitude: pos.lat, longitude: pos.lng }));
+                                    }}
+                                />
+                                {errors.latitude && <div className="text-destructive text-[10px] mt-1">{errors.latitude}</div>}
                             </div>
                         </section>
                     </div>
@@ -156,12 +147,12 @@ export default function CreateEvent() {
                         <section className="bg-card border border-primary/20 p-6 relative">
                              <div className="absolute top-0 right-0 p-2 opacity-10">0x03</div>
                             <h2 className="text-primary font-bold uppercase mb-4 text-xs tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-primary"></span> Cluster_Info
+                                <span className="w-1.5 h-1.5 bg-primary"></span> Additional Details
                             </h2>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Organizer_Alias</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Organizer Name</label>
                                     <input
                                         type="text"
                                         value={data.organizer}
@@ -171,7 +162,7 @@ export default function CreateEvent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">External_Link (Web)</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Website URL (Optional)</label>
                                     <input
                                         type="url"
                                         value={data.website}
@@ -181,7 +172,7 @@ export default function CreateEvent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Category_Class</label>
+                                    <label className="block text-[10px] text-muted-foreground uppercase mb-1">Category</label>
                                     <select
                                         value={data.category}
                                         onChange={e => setData('category', e.target.value)}
@@ -199,7 +190,7 @@ export default function CreateEvent() {
                         <section className="bg-card border border-primary/20 p-6 relative">
                              <div className="absolute top-0 right-0 p-2 opacity-10">0x04</div>
                             <h2 className="text-primary font-bold uppercase mb-4 text-xs tracking-widest flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-primary"></span> Tag_Injection
+                                <span className="w-1.5 h-1.5 bg-primary"></span> Tags
                             </h2>
                             
                             <div className="flex gap-2 mb-3">
@@ -238,13 +229,13 @@ export default function CreateEvent() {
                                 disabled={processing}
                                 className="w-full bg-primary/20 text-primary border-2 border-primary py-4 font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-primary-foreground transition-all shadow-[0_0_20px_rgba(34,197,94,0.15)] disabled:opacity-50 flex items-center justify-center gap-3"
                             >
-                                <Save className="w-5 h-5" /> EXECUTE_INITIATION
+                                <Save className="w-5 h-5" /> Post Event
                             </button>
                             <Link 
                                 href="/events"
                                 className="w-full text-center text-muted-foreground hover:text-primary transition-colors text-xs uppercase"
                             >
-                                &gt; CANCEL_PROCESS
+                                &gt; Cancel
                             </Link>
                         </div>
                     </div>

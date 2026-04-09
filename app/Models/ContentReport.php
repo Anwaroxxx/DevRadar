@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\CommunityPost;
+use App\Models\CommunityComment;
 
 class ContentReport extends Model
 {
@@ -23,7 +25,7 @@ class ContentReport extends Model
 
     public function reporter()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function admin()
@@ -39,6 +41,8 @@ class ContentReport extends Model
             'job' => JobListing::find($this->content_id),
             'message' => Message::find($this->content_id),
             'user' => User::find($this->content_id),
+            'community_post' => CommunityPost::find($this->content_id),
+            'community_comment' => CommunityComment::find($this->content_id),
             default => null,
         };
     }

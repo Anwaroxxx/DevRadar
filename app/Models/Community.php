@@ -11,11 +11,20 @@ class Community extends Model
 
     protected $fillable = [
         'user_id', 'name', 'description', 'platform', 'join_link',
-        'city', 'logo', 'category', 'member_count',
+        'city', 'latitude', 'longitude', 'logo', 'category', 'member_count',
+        'approval_status', 'approved_by', 'rejection_reason',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user() { return $this->belongsTo(User::class)->withTrashed(); }
     public function followers() {
         return $this->belongsToMany(User::class, 'community_user')->withTimestamps();
+    }
+
+    public function posts() {
+        return $this->hasMany(CommunityPost::class);
+    }
+
+    public function snapshots() {
+        return $this->hasMany(CommunitySnapshot::class);
     }
 }

@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class ProfileController extends Controller
 {
@@ -30,9 +32,25 @@ class ProfileController extends Controller
 
         $user->load([
             'badges' => fn ($q) => $q->orderBy('track')->orderBy('level'),
+            'achievements', // Load new achievements feature
+            'marketplaceItems', // Load user's digital shop items
+            'marketplacePurchases.item', // Load the user's inventory
         ]);
 
         $user->loadCount(['followers', 'following']);
+
+        // Load new Achievement system catalog
+        $achievements = \App\Models\Achievement::all()->map(function ($a) use ($user) {
+            return [
+                'id' => $a->id,
+                'slug' => $a->slug,
+                'name' => $a->name,
+                'description' => $a->description,
+                'icon' => $a->icon,
+                'xp_reward' => $a->xp_reward,
+                'earned' => $user->achievements->contains('id', $a->id),
+            ];
+        });
 
         $achievementCatalog = Badge::query()
             ->orderBy('track')
@@ -52,9 +70,31 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Show', [
             'profileUser' => $user,
             'achievementCatalog' => $achievementCatalog,
+            'achievementsData' => $achievements, // New system
             'isOwnProfile' => $request->user()?->id === $user->id,
             'isFollowing' => $request->user() ? $request->user()->isFollowing($user) : false,
+            'hasBlocked' => $request->user() ? $request->user()->hasBlocked($user) : false,
+            'isBlocked' => $request->user() ? $user->hasBlocked($request->user()) : false,
         ]);
+    }
+
+    public function reportUser(User $user, Request $request)
+    {
+        $request->validate([
+            'reason' => 'required|string',
+            'description' => 'required|string',
+        ]);
+
+        \App\Models\ContentReport::create([
+            'user_id' => $request->user()->id,
+            'content_type' => 'user',
+            'content_id' => $user->id,
+            'reason' => $request->reason,
+            'description' => $request->description,
+            'status' => 'pending'
+        ]);
+
+        return back()->with('success', 'SIGNAL_TRANSMITTED: Moderation unit has been notified.');
     }
 
     public function toggleFollow(User $user, Request $request)
@@ -69,9 +109,35 @@ class ProfileController extends Controller
             $follower->following()->detach($user->id);
             return back()->with('info', "Connection severed: @{$user->username}");
         } else {
-            $follower->following()->attach($user->id);
+            $follower->following()->syncWithoutDetaching([$user->id]);
             $follower->awardXp(10, 'followed_user', "Started following @{$user->username}", $user);
+            $user->notify(new \App\Notifications\NewFollower($follower));
             return back()->with('success', "Node connected: @{$user->username}. +10 XP earned!");
+        }
+    }
+
+    public function toggleBlock(User $user, Request $request)
+    {
+        $blocker = $request->user();
+
+        if ($blocker->id === $user->id) {
+            return back()->with('error', 'SYSTEM_ERR: SELF_BLOCK_REJECTED');
+        }
+
+        if ($blocker->hasBlocked($user)) {
+            $blocker->blockedUsers()->where('blocked_user_id', $user->id)->delete();
+            return back()->with('info', "Node unrestricted: @{$user->username}");
+        } else {
+            // Detach follow relationship if exists
+            $blocker->following()->detach($user->id);
+            $user->following()->detach($blocker->id);
+
+            $blocker->blockedUsers()->create([
+                'blocked_user_id' => $user->id,
+                'reason' => $request->reason ?? 'System isolation protocol'
+            ]);
+
+            return back()->with('success', "Node isolated: @{$user->username}. Communications severed.");
         }
     }
 
@@ -102,9 +168,15 @@ class ProfileController extends Controller
             'github_url' => 'nullable|url',
             'location'   => 'nullable|string',
             'city'       => 'nullable|string',
+            'latitude'   => 'nullable|numeric',
+            'longitude'  => 'nullable|numeric',
             'skills'     => 'nullable|array',
             'skills.*'   => 'nullable|integer',
             'avatar_file' => 'nullable|image|max:2048',
+            'profile_accent_color'   => 'nullable|string',
+            'profile_theme_style'    => 'nullable|string',
+            'profile_glow_effect'    => 'nullable|boolean',
+            'profile_matrix_intensity' => 'nullable|string',
         ]);
 
         if ($request->hasFile('avatar_file')) {
@@ -140,6 +212,32 @@ class ProfileController extends Controller
         return redirect()->route('profile.show', $user->username)->with('success', 'Profile updated!');
     }
 
+    public function updatePhoto(Request $request)
+    {
+        $request->validate([
+            'avatar_file' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('avatar_file')) {
+            // Delete old avatar if it exists
+            if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
+                $publicPath = ltrim(substr($user->avatar, strlen('/storage/')), '/');
+                Storage::disk('public')->delete($publicPath);
+            }
+
+            $path = $request->file('avatar_file')->store('avatars/' . $user->id, 'public');
+            $avatarUrl = '/storage/' . $path;
+            
+            $user->update(['avatar' => $avatarUrl]);
+
+            return response()->json(['avatar' => $avatarUrl, 'message' => 'Profile photo updated']);
+        }
+
+        return response()->json(['message' => 'No file uploaded'], 400);
+    }
+
     public function updatePassword(Request $request)
     {
         $validated = $request->validate([
@@ -162,9 +260,20 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        \Illuminate\Support\Facades\Auth::logout();
+        // Log the deletion BEFORE logout so we have context if needed, 
+        // though with nullable admin_id we can log it cleanly.
+        AuditLog::log(
+            admin_id: null, 
+            action: 'account_self_deletion', 
+            target_type: 'user', 
+            target_id: $user->id, 
+            description: "User {$user->username} (ID: {$user->id}) decommissioned their own account."
+        );
 
-        $user->delete();
+        $user->update(['account_status' => 'deleted']);
+        $user->delete(); // Soft delete
+
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

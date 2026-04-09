@@ -21,13 +21,13 @@ export default function MarketplaceIndex({ products }) {
                     <div className="flex items-center gap-4">
                         <ShoppingBag className="w-12 h-12 text-primary" />
                         <div>
-                            <h1 className="text-4xl font-black uppercase text-foreground leading-none">Market_Hub</h1>
-                            <p className="font-mono text-sm text-muted-foreground mt-2 tracking-widest uppercase opacity-80">Redeem XP for System modules & External Vouchers</p>
+                            <h1 className="text-4xl font-black uppercase text-foreground leading-none">Marketplace</h1>
+                            <p className="font-mono text-sm text-muted-foreground mt-2 tracking-widest uppercase opacity-80">Redeem XP for rewards and vouchers</p>
                         </div>
                     </div>
                     
                     <div className="mt-6 md:mt-0 bg-black/60 border-2 border-primary p-6 shadow-[0_0_20px_rgba(34,197,94,0.15)] flex flex-col items-center min-w-[200px]">
-                        <div className="text-xs font-mono text-muted-foreground uppercase mb-1">Your_Balance</div>
+                        <div className="text-xs font-mono text-muted-foreground uppercase mb-1">Your Balance</div>
                         <div className="text-4xl font-black text-primary flex items-center gap-2">
                              {auth.user.xp} <Zap className="w-6 h-6 fill-primary" />
                         </div>
@@ -50,7 +50,7 @@ export default function MarketplaceIndex({ products }) {
 
                             <div className="mt-auto pt-6 border-t border-border/50">
                                 <div className="flex justify-between items-center mb-6">
-                                    <div className="text-xs font-mono text-muted-foreground uppercase">Integration_Cost</div>
+                                    <div className="text-xs font-mono text-muted-foreground uppercase">Price</div>
                                     <div className="text-2xl font-black text-foreground flex items-center gap-1">
                                         {product.cost} <span className="text-xs text-primary font-bold">XP</span>
                                     </div>
@@ -65,12 +65,12 @@ export default function MarketplaceIndex({ products }) {
                                         : 'border-muted-foreground/30 text-muted-foreground bg-muted-foreground/5 cursor-not-allowed opacity-50'
                                     }`}
                                 >
-                                    {auth.user.xp >= product.cost ? 'INITIALIZE_TRANSFER' : 'INSUFFICIENT_POWER'}
+                                    {auth.user.xp >= product.cost ? 'Redeem Now' : 'Insufficient XP'}
                                 </button>
                                 
                                 {auth.user.xp < product.cost && (
                                     <p className="text-[10px] font-mono text-destructive mt-3 text-center uppercase tracking-tighter">
-                                        <AlertTriangle className="inline w-3 h-3 mb-0.5 mr-1" /> Requires +{product.cost - auth.user.xp} additional XP units
+                                        <AlertTriangle className="inline w-3 h-3 mb-0.5 mr-1" /> Requires {product.cost - auth.user.xp} more XP
                                     </p>
                                 )}
                             </div>
@@ -84,9 +84,9 @@ export default function MarketplaceIndex({ products }) {
                          <CheckCircle className="w-8 h-8 text-primary" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-lg uppercase text-primary">Secure_Transaction_Protocol</h4>
+                        <h4 className="font-bold text-lg uppercase text-primary">Secure Trading</h4>
                         <p className="text-sm text-muted-foreground font-mono mt-1 opacity-80">
-                            The DevRadar Marketplace follows end-to-end encrypted redemption. Once XP is spent, modules are integrated into your node profile immediately. Physical gift cards will be dispatched to your registered comms-array (email).
+                            The DevRadar Marketplace follows end-to-end secure redemption. Once XP is spent, rewards are added to your profile immediately. Gift cards will be sent to your registered email address.
                         </p>
                     </div>
                 </div>

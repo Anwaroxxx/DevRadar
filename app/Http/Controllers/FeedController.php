@@ -14,24 +14,52 @@ class FeedController extends Controller
 {
     public function index()
     {
+        $userRank = null;
+        $blockedUserIds = [];
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            
+            // Get all IDs involved in blocking (both ways)
+            $blockedByMe = $user->blockedUsers()->pluck('blocked_user_id')->toArray();
+            $blockingMe = $user->blockedByUsers()->pluck('user_id')->toArray();
+            $blockedUserIds = array_unique(array_merge($blockedByMe, $blockingMe));
+
+            // Estimate rank by counting users with higher XP
+            $rank = User::where('xp', '>', $user->xp)
+                ->where('account_status', 'active')
+                ->whereNotIn('id', $blockedUserIds)
+                ->count() + 1;
+
+            $userRank = [
+                'xp' => $user->xp,
+                'rank' => $rank
+            ];
+        }
+
         $recentEvents = Event::with(['user', 'tags'])
             ->where('is_approved', true)
+            ->whereNotIn('user_id', $blockedUserIds)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
 
         $recentJobs = JobListing::with('user')
             ->where('is_active', true)
+            ->whereNotIn('user_id', $blockedUserIds)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
 
         $recentCommunities = Community::with('user')
+            ->whereNotIn('user_id', $blockedUserIds)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
 
-        $trendingTags = Tag::withCount('events')
+        $trendingTags = Tag::withCount(['events' => function ($q) use ($blockedUserIds) {
+                $q->whereNotIn('user_id', $blockedUserIds);
+            }])
             ->orderByDesc('events_count')
             ->limit(10)
             ->get();
@@ -42,6 +70,7 @@ class FeedController extends Controller
             'recentCommunities' => $recentCommunities,
             'trendingTags'      => $trendingTags,
             'activeNodes'       => User::count(),
+            'userRank'          => $userRank,
         ]);
     }
 }

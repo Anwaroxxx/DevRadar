@@ -32,7 +32,7 @@ export default function AdminSettings({ feature_flags }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Settings className="w-6 h-6 text-primary" /> SETTINGS_&_FEATURES
+                            <Settings className="w-6 h-6 text-primary" /> Settings & Features
                         </h1>
                     </div>
                 </div>
@@ -77,7 +77,7 @@ export default function AdminSettings({ feature_flags }) {
                                                 onClick={() => handleConfigSubmit(flag.id)}
                                                 className="flex-1 bg-primary/20 text-primary border border-primary px-3 py-2 text-xs font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-all"
                                             >
-                                                SAVE_CONFIG
+                                                Save Configuration
                                             </button>
                                             <button
                                                 onClick={() => setEditingFlag(null)}

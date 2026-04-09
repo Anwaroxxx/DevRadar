@@ -3,12 +3,14 @@ import { Head, Link, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Search, Package, Plus, AlertTriangle, Edit, Trash2 } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function AdminMarketplace({ items, filters, categories }) {
     const [editingItem, setEditingItem] = useState(null);
     const [editForm, setEditForm] = useState({ price_xp: 0, max_quantity: null });
     const [search, setSearch] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(filters.category || '');
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -32,8 +34,14 @@ export default function AdminMarketplace({ items, filters, categories }) {
     };
 
     const handleDelete = (itemId) => {
-        if (!confirm('Delete this marketplace item?')) return;
-        router.delete(`/admin/marketplace/${itemId}`);
+        setConfirmDelete({ open: true, id: itemId });
+    };
+
+    const performDelete = () => {
+        if (!confirmDelete.id) return;
+        router.delete(`/admin/content/marketplace/${confirmDelete.id}`, {
+            onSuccess: () => setConfirmDelete({ open: false, id: null })
+        });
     };
 
     return (
@@ -47,7 +55,7 @@ export default function AdminMarketplace({ items, filters, categories }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <ShoppingCart className="w-6 h-6 text-primary" /> MARKETPLACE
+                            <ShoppingCart className="w-6 h-6 text-primary" /> Marketplace Management
                         </h1>
                     </div>
                     <div className="text-xs font-mono text-muted-foreground">
@@ -208,6 +216,16 @@ export default function AdminMarketplace({ items, filters, categories }) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal 
+                isOpen={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
+                onConfirm={performDelete}
+                title="Wipe Marketplace Item"
+                description="This action will permanently remove this item from the network's commerce grid. All marketplace associations will be severed."
+                confirmText="Delete Item"
+                variant="destructive"
+            />
         </HackerLayout>
     );
 }

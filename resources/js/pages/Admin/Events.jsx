@@ -3,9 +3,11 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { Calendar, Search, CheckCircle, XCircle, Trash2, AlertTriangle, MapPin, User } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function AdminEvents({ events, filters }) {
     const [search, setSearch] = useState(filters.search || '');
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
     const deleteForm = useForm({});
 
     const handleSearch = (e) => {
@@ -22,8 +24,14 @@ export default function AdminEvents({ events, filters }) {
     };
 
     const handleDelete = (eventId) => {
-        if (!confirm('Delete this event permanently?')) return;
-        deleteForm.delete(`/admin/events/${eventId}`);
+        setConfirmDelete({ open: true, id: eventId });
+    };
+
+    const performDelete = () => {
+        if (!confirmDelete.id) return;
+        deleteForm.delete(`/admin/content/event/${confirmDelete.id}`, {
+            onSuccess: () => setConfirmDelete({ open: false, id: null })
+        });
     };
 
     const categoryColors = {
@@ -43,7 +51,7 @@ export default function AdminEvents({ events, filters }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Calendar className="w-6 h-6 text-primary" /> EVENT_MODERATION
+                            <Calendar className="w-6 h-6 text-primary" /> Event Moderation
                         </h1>
                     </div>
                     <div className="text-xs font-mono text-muted-foreground">{events.total} total events</div>
@@ -153,6 +161,16 @@ export default function AdminEvents({ events, filters }) {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal 
+                isOpen={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
+                onConfirm={performDelete}
+                title="Decommission Event"
+                description="This action will permanently purge this event from the network grid. All associated data will be lost."
+                confirmText="Delete Event"
+                variant="destructive"
+            />
         </HackerLayout>
     );
 }

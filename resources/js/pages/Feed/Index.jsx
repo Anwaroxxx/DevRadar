@@ -4,7 +4,7 @@ import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { Activity, Radio, Network, GitPullRequest, Bookmark, Hash } from 'lucide-react';
 
-export default function FeedIndex({ recentEvents, recentJobs, recentCommunities, trendingTags, activeNodes }) {
+export default function FeedIndex({ recentEvents, recentJobs, recentCommunities, trendingTags, activeNodes, userRank }) {
     // Combine logs into a single feed and sort by date descending
     const feed = [
         ...recentEvents.map(e => ({ type: 'event', data: e, date: new Date(e.created_at) })),
@@ -141,6 +141,29 @@ export default function FeedIndex({ recentEvents, recentJobs, recentCommunities,
                             <li className="flex justify-between"><span>Security:</span> <span className="text-primary">SECURE</span></li>
                         </ul>
                     </div>
+
+                    {/* Personal Rank Widget */}
+                    {userRank && (
+                        <div className="bg-card border border-primary/30 p-4 relative overflow-hidden group hover:border-primary transition-all">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/20 transition-all pointer-events-none" />
+                            <h3 className="font-bold border-b border-border pb-2 mb-4 uppercase text-sm flex items-center justify-between">
+                                Your Status <Activity className="w-4 h-4 text-primary" />
+                            </h3>
+                            <div className="flex justify-between items-end border-b border-border/50 pb-3 mb-3">
+                                <div>
+                                    <div className="text-[10px] text-muted-foreground uppercase font-mono tracking-widest">Global Rank</div>
+                                    <div className="text-3xl font-black text-foreground">#{userRank.rank}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] text-muted-foreground uppercase font-mono tracking-widest">XP Module</div>
+                                    <div className="text-xl font-bold text-primary">{userRank.xp.toLocaleString()}</div>
+                                </div>
+                            </div>
+                            <Link href="/leaderboards" className="block w-full py-2 bg-primary/10 border border-primary/30 text-primary text-center text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-black transition-all">
+                                View Leaderboards →
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </HackerLayout>

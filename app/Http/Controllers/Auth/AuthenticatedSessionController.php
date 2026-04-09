@@ -23,6 +23,10 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = User::withTrashed()->where('email', $credentials['email'])->first();
+            if ($user && $user->trashed() && \Illuminate\Support\Facades\Hash::check($credentials['password'], $user->password)) {
+                return redirect()->route('account.deactivated');
+            }
             return back()->withErrors(['email' => 'Invalid credentials.']);
         }
 
@@ -31,7 +35,7 @@ class AuthenticatedSessionController extends Controller
         $user->update(['last_login_at' => now()]);
         $user->awardXp(5, 'daily_login', 'Daily login bonus');
 
-        return redirect()->intended(route('home'));
+        return redirect()->intended(route('dashboard'));
     }
 
     public function destroy(Request $request)
@@ -39,6 +43,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('home');
+        return redirect()->route('landing');
     }
 }

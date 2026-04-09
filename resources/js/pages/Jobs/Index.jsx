@@ -12,21 +12,21 @@ export default function JobsIndex({ jobs, filters }) {
             
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8 border-b border-border pb-4">
-                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; PING_REQUESTS</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; Job Board</h1>
                     {auth.user && (
                         <Link href="/jobs/create" className="bg-primary/20 text-primary border border-primary px-6 py-2 font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
-                             <Plus className="w-4 h-4" /> SUBMIT_PING
+                             <Plus className="w-4 h-4" /> Post Job
                         </Link>
                     )}
                 </div>
 
                 {/* Filters */}
                 <div className="bg-card border border-primary/20 p-4 mb-8 font-mono text-sm flex gap-4 overflow-x-auto">
-                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">FILTER_OPS:</div>
+                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">Filters:</div>
                     <Link href="/jobs" className={`px-3 py-1 border ${!filters.type ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>ALL</Link>
                     <Link href="/jobs?type=full-time" className={`px-3 py-1 border ${filters.type === 'full-time' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>FULL_TIME</Link>
                     <Link href="/jobs?type=internship" className={`px-3 py-1 border ${filters.type === 'internship' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>INTERNSHIPS</Link>
-                    <Link href="/jobs?remote=1" className={`px-3 py-1 border ${filters.remote ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>REMOTE_NODES</Link>
+                    <Link href="/jobs?remote=1" className={`px-3 py-1 border ${filters.remote ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>REMOTE ONLY</Link>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -42,7 +42,7 @@ export default function JobsIndex({ jobs, filters }) {
                                 <h2 className="text-xl font-bold group-hover:text-primary transition-colors underline decoration-transparent group-hover:decoration-primary">{job.title}</h2>
                                 {job.is_remote && (
                                     <span className="text-xs border border-primary text-primary px-2 py-1 font-mono uppercase bg-primary/10">
-                                        [REMOTE_OK]
+                                        [Remote]
                                     </span>
                                 )}
                             </div>
@@ -92,7 +92,7 @@ export default function JobsIndex({ jobs, filters }) {
                                     rel="noopener noreferrer"
                                     className="bg-primary/10 text-primary border border-primary px-4 py-2 uppercase font-bold hover:bg-primary hover:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-shadow shadow-[0_0_10px_rgba(34,197,94,0.1)] hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]"
                                 >
-                                    SEND_PACKET //
+                                    Apply Now //
                                 </a>
                             </div>
                         </motion.div>

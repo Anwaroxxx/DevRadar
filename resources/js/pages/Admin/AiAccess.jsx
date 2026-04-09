@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
-import { Cpu, Search, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Cpu, Search, ChevronDown, AlertTriangle, RefreshCcw, ShieldX } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function AdminAiAccess({ users, usage_logs, tiers }) {
     const [editingUser, setEditingUser] = useState(null);
     const [editForm, setEditForm] = useState({ ai_tier: 'free', monthly_tokens: 0 });
     const [search, setSearch] = useState('');
+    const [confirmAction, setConfirmAction] = useState({ open: false, type: null, id: null });
 
     const handleEdit = (user) => {
         setEditingUser(user.id);
@@ -24,13 +26,23 @@ export default function AdminAiAccess({ users, usage_logs, tiers }) {
     };
 
     const handleRevoke = (userId) => {
-        if (!confirm('Revoke AI access from this user?')) return;
-        router.post(`/admin/users/${userId}/revoke-ai`);
+        setConfirmAction({ open: true, type: 'revoke', id: userId });
     };
 
     const handleResetUsage = (userId) => {
-        if (!confirm('Reset monthly usage for this user?')) return;
-        router.post(`/admin/users/${userId}/reset-ai-usage`);
+        setConfirmAction({ open: true, type: 'reset', id: userId });
+    };
+
+    const performAction = () => {
+        if (!confirmAction.id) return;
+        
+        const route = confirmAction.type === 'revoke' 
+            ? `/admin/users/${confirmAction.id}/revoke-ai`
+            : `/admin/users/${confirmAction.id}/reset-ai-usage`;
+
+        router.post(route, {}, {
+            onSuccess: () => setConfirmAction({ open: false, type: null, id: null })
+        });
     };
 
     const getTierColor = (tier) => {
@@ -58,13 +70,9 @@ export default function AdminAiAccess({ users, usage_logs, tiers }) {
 
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-primary/30 pb-4">
-                    <div className="flex items-center gap-3">
-                        <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
-                        <span className="text-border">/</span>
-                        <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Cpu className="w-6 h-6 text-primary" /> AI_ACCESS_CONTROL
+                        <h1 className="text-xl font-bold flex items-center gap-2">
+                            <Cpu className="w-6 h-6 text-primary" /> AI Access Management
                         </h1>
-                    </div>
                 </div>
 
                 {/* Usage Chart */}
@@ -235,6 +243,20 @@ export default function AdminAiAccess({ users, usage_logs, tiers }) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal 
+                isOpen={confirmAction.open}
+                onClose={() => setConfirmAction({ open: false, type: null, id: null })}
+                onConfirm={performAction}
+                title={confirmAction.type === 'revoke' ? "Terminate AI Access" : "Reset Usage Quota"}
+                description={
+                    confirmAction.type === 'revoke' 
+                    ? "This user will immediately lose all neural capabilities. This operation is logged to the security audit trail."
+                    : "This will reset the user's monthly token consumption to zero. Use with caution."
+                }
+                confirmText={confirmAction.type === 'revoke' ? "Revoke Access" : "Reset Quota"}
+                variant={confirmAction.type === 'revoke' ? "destructive" : "default"}
+            />
         </HackerLayout>
     );
 }

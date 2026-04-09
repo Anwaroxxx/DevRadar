@@ -3,9 +3,11 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import HackerLayout from '@/layouts/HackerLayout';
 import { motion } from 'framer-motion';
 import { Briefcase, Search, Trash2, ToggleLeft, ToggleRight, User, MapPin, ExternalLink } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function AdminJobs({ jobs, filters }) {
     const [search, setSearch] = useState(filters.search || '');
+    const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
     const deleteForm = useForm({});
 
     const handleSearch = (e) => {
@@ -18,8 +20,14 @@ export default function AdminJobs({ jobs, filters }) {
     };
 
     const handleDelete = (jobId) => {
-        if (!confirm('Delete this job listing permanently?')) return;
-        deleteForm.delete(`/admin/jobs/${jobId}`);
+        setConfirmDelete({ open: true, id: jobId });
+    };
+
+    const performDelete = () => {
+        if (!confirmDelete.id) return;
+        deleteForm.delete(`/admin/content/job/${confirmDelete.id}`, {
+            onSuccess: () => setConfirmDelete({ open: false, id: null })
+        });
     };
 
     const typeColors = {
@@ -38,7 +46,7 @@ export default function AdminJobs({ jobs, filters }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Briefcase className="w-6 h-6 text-primary" /> JOB_MANAGEMENT
+                            <Briefcase className="w-6 h-6 text-primary" /> Job Management
                         </h1>
                     </div>
                     <div className="text-xs font-mono text-muted-foreground">{jobs.total} total jobs</div>
@@ -134,6 +142,16 @@ export default function AdminJobs({ jobs, filters }) {
                     </div>
                 )}
             </div>
+
+            <ConfirmModal 
+                isOpen={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
+                onConfirm={performDelete}
+                title="Wipe Job Listing"
+                description="This action will permanently remove this job from the index. Recruiters and candidates will no longer be able to track this signal."
+                confirmText="Delete Job"
+                variant="destructive"
+            />
         </HackerLayout>
     );
 }

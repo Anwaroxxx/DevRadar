@@ -38,7 +38,7 @@ export default function AuthLayout({
                 </div>
                 
                 <div className="text-center opacity-40 font-mono text-[9px] uppercase tracking-[0.3em]">
-                    SECURE_NODE_ACCESS_PROTOCOL_V.1
+                    Secure Access Protocol
                 </div>
             </div>
         </div>

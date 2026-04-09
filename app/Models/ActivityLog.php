@@ -10,5 +10,5 @@ class ActivityLog extends Model
         'user_id', 'action', 'description', 'xp_change', 'loggable_id', 'loggable_type',
     ];
 
-    public function user() { return $this->belongsTo(User::class); }
+    public function user() { return $this->belongsTo(User::class)->withTrashed(); }
 }

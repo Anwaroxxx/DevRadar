@@ -36,7 +36,7 @@ export default function DeleteUser() {
         <div className="space-y-6">
             <Heading 
                 title="Delete Account" 
-                description="Permanently delete your account and all of its data."
+                description="Permanently delete your account and all the related data."
             />
             
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">

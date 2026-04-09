@@ -1,8 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap, Menu, X, Shield, Clock as ClockIcon, ChevronDown } from 'lucide-react';
+import { Terminal, Map, Calendar, Briefcase, Users, Trophy, Cpu, LogOut, Sun, Moon, MessageSquare, Zap, Menu, X, Shield, Clock as ClockIcon, ChevronDown, Bell, Radar } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import AsciiWaterfall from '@/components/AsciiWaterfall';
 import { motion, AnimatePresence } from 'framer-motion';
+import FloatingChat from '@/components/FloatingChat';
 
 export default function HackerLayout({ children }) {
     const { auth, flash } = usePage().props;
@@ -37,7 +38,8 @@ export default function HackerLayout({ children }) {
 
     // Primary nav links - always visible on desktop
     const primaryNavLinks = [
-        { href: '/',             label: 'Map',          icon: Map },
+        { href: '/',             label: 'Terminal',     icon: Terminal },
+        { href: '/cluster-zone', label: 'Cluster Zone', icon: Radar },
         { href: '/events',       label: 'Events',       icon: Calendar },
         { href: '/jobs',         label: 'Jobs',         icon: Briefcase },
         { href: '/communities',  label: 'Communities',  icon: Users },
@@ -64,19 +66,19 @@ export default function HackerLayout({ children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 md:gap-4">
                             {/* Mobile Menu Button */}
                             <button 
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="md:hidden p-2 text-primary hover:bg-primary/20 transition-colors"
+                                className="md:hidden p-2.5 text-primary hover:bg-primary/20 transition-all border border-transparent hover:border-primary/20 active:scale-95"
                             >
-                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                             </button>
 
                             {/* Logo */}
-                            <Link href="/" className="flex items-center gap-2">
-                                <Terminal className="w-6 h-6 text-primary" />
-                                <span className="font-bold tracking-tighter uppercase">DEV<span className="text-primary">RADAR</span>_</span>
+                            <Link href="/" className="flex items-center gap-1.5 md:gap-2 group">
+                                <Terminal className="w-5 h-5 md:w-6 md:h-6 text-primary group-hover:animate-pulse" />
+                                <span className="font-extrabold tracking-tighter uppercase text-sm md:text-base">DEV<span className="text-primary">RADAR</span>_</span>
                             </Link>
                         </div>
 
@@ -141,11 +143,45 @@ export default function HackerLayout({ children }) {
                             </div>
 
                             {user ? (
-                                <div className="flex items-center gap-3 lg:gap-4">
-                                    <div className="hidden sm:flex flex-col items-end leading-none">
+                                <div className="flex items-center gap-3 lg:gap-4 ml-4">
+                                    {/* Notifications */}
+                                    <div className="relative group">
+                                        <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors">
+                                            <Bell className="w-5 h-5" />
+                                            {auth?.notifications?.length > 0 && (
+                                                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-primary border-2 border-card rounded-full animate-pulse" />
+                                            )}
+                                        </button>
+                                        
+                                        <div className="absolute right-0 mt-2 w-80 bg-black/95 border border-primary/30 shadow-[0_0_20px_rgba(34,197,94,0.1)] hidden group-hover:block z-[100] p-4 text-left font-mono">
+                                            <div className="text-xs text-primary font-bold uppercase border-b border-primary/30 pb-2 mb-2 flex justify-between items-center tracking-widest">
+                                                <span>Notifications</span>
+                                                <Link href="/notifications" className="text-[8px] hover:underline">[ VIEW ALL ]</Link>
+                                            </div>
+                                            <div className="max-h-64 overflow-y-auto pr-1">
+                                                {auth?.notifications?.length > 0 ? (
+                                                    auth.notifications.map((n) => (
+                                                        <Link key={n.id} href={n.data.action_url} className="block p-3 border-b border-white/5 hover:bg-primary/10 transition-colors group/notif">
+                                                            <div className="text-xs text-foreground group-hover/notif:text-primary transition-colors leading-tight">{n.data.message}</div>
+                                                            <div className="text-[9px] text-muted-foreground mt-1 opacity-70 flex justify-between">
+                                                                <span>{new Date(n.created_at).toLocaleTimeString()}</span>
+                                                                <span className="text-primary italic">[{n.data.type || 'SYS'}]</span>
+                                                            </div>
+                                                        </Link>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-xs text-center text-muted-foreground uppercase opacity-50 border border-dashed border-border/50">
+                                                        No new activity.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="hidden sm:flex flex-col items-end leading-none border-l border-border pl-4">
                                         <div className="flex items-center gap-2">
                                             {user.is_admin && (
-                                                <span className="text-[8px] bg-yellow-400 text-black px-1 font-black animate-pulse">SUDO</span>
+                                                <span className="text-[8px] bg-yellow-400 text-black px-1 font-black animate-pulse">ADMIN</span>
                                             )}
                                             <span className="text-[10px] font-black text-primary uppercase tracking-widest">{user.username}</span>
                                         </div>
@@ -172,7 +208,7 @@ export default function HackerLayout({ children }) {
                                         Login
                                     </Link>
                                     <Link href="/register" className="bg-primary/10 text-primary border-2 border-primary px-4 py-2 text-xs font-black uppercase tracking-widest shadow-[0_0_10px_rgba(34,197,94,0.1)] hover:bg-primary hover:text-primary-foreground transition-all">
-                                        INIT
+                                        Register
                                     </Link>
                                 </div>
                             )}
@@ -187,28 +223,35 @@ export default function HackerLayout({ children }) {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="md:hidden bg-card border-b border-border overflow-hidden"
+                            className="md:hidden bg-card/95 border-b border-border overflow-hidden backdrop-blur-2xl"
                         >
-                            <nav className="p-4 flex flex-col gap-3 font-bold uppercase text-sm">
+                            <nav className="p-4 flex flex-col gap-2 font-bold uppercase text-xs">
                                 {allNavLinks.map((link) => (
                                     <Link 
                                         key={link.href}
                                         href={link.href} 
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className={`flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-all rounded border border-border/50 ${link.admin ? 'text-yellow-400 border-yellow-400/30' : ''}`}
+                                        className={`flex items-center justify-between px-4 py-3.5 hover:bg-primary/10 transition-all border border-border/40 hover:border-primary/40 active:bg-primary/20 ${link.admin ? 'text-yellow-400 border-yellow-400/20 bg-yellow-400/5' : 'bg-black/20'}`}
                                     >
-                                        <link.icon className={`w-4 h-4 shrink-0 ${link.pulse ? 'animate-pulse' : ''}`} />
-                                        <span>{link.label}</span>
-                                        {link.href === '/chat' && user?.unread_dm_count > 0 && (
-                                            <span className="ml-auto min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center text-[10px] font-black bg-primary text-black border border-primary">
-                                                {user.unread_dm_count > 99 ? '99+' : user.unread_dm_count}
+                                        <div className="flex items-center gap-3">
+                                            <link.icon className={`w-4 h-4 shrink-0 ${link.pulse ? 'animate-pulse' : ''} ${link.admin ? 'text-yellow-400' : 'text-primary'}`} />
+                                            <span className="tracking-widest">{link.label}</span>
+                                        </div>
+                                        
+                                        {(!!link.badge || (link.href === '/chat' && user?.unread_dm_count > 0)) && (
+                                            <span className="min-w-[18px] h-[18px] px-1.5 inline-flex items-center justify-center text-[9px] font-black bg-primary text-black border border-primary shadow-[0_0_8px_rgba(34,197,94,0.3)]">
+                                                {link.badge || (link.href === '/chat' && user?.unread_dm_count) || 0}
                                             </span>
                                         )}
                                     </Link>
                                 ))}
-                                <div className="border-t border-border mt-4 pt-4 flex items-center justify-between font-mono text-[9px] text-muted-foreground uppercase">
-                                    <span>SYS_CLOCK: {time.toLocaleTimeString()}</span>
-                                    <span>LVL_SEC: HI_VIS</span>
+                                
+                                <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between font-mono text-[8px] text-muted-foreground/60 uppercase tracking-[0.2em]">
+                                    <div className="flex items-center gap-1.5 text-primary/40">
+                                        <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                        <span>Latency: 24ms</span>
+                                    </div>
+                                    <span>Verified Connection</span>
                                 </div>
                             </nav>
                         </motion.div>
@@ -235,7 +278,7 @@ export default function HackerLayout({ children }) {
                                 <Terminal className="w-5 h-5 shrink-0 mt-0.5" />
                                 <div className="flex-1">
                                     <div className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 flex justify-between">
-                                        <span>[SYS_MESSAGE]</span>
+                                        <span>[System Message]</span>
                                         <span className="opacity-40">{new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                                     </div>
                                     <div className="text-xs font-mono font-bold leading-tight">
@@ -281,6 +324,9 @@ export default function HackerLayout({ children }) {
                     </div>
                 </div>
             </footer>
+
+            {/* Global Communication Uplink */}
+            <FloatingChat />
         </div>
     );
 }

@@ -12,17 +12,17 @@ export default function EventsIndex({ events, filters, tags }) {
             
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8 border-b border-border pb-4">
-                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; EVENT_GRID</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-widest text-primary">&gt; Event Calendar</h1>
                     {auth.user && (
                         <Link href="/events/create" className="bg-primary/20 text-primary border border-primary px-6 py-2 font-bold uppercase hover:bg-primary hover:text-primary-foreground transition-all flex items-center gap-2 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
-                             <Plus className="w-4 h-4" /> Initialize_Event
+                             <Plus className="w-4 h-4" /> Create Event
                         </Link>
                     )}
                 </div>
 
                 {/* Filters */}
                 <div className="bg-card border border-primary/20 p-4 mb-8 font-mono text-sm flex gap-4 overflow-x-auto">
-                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">QUERY_PARAMS:</div>
+                    <div className="text-muted-foreground mr-2 border-r border-border pr-4 py-1">Filter by:</div>
                     <Link href="/events" className={`px-3 py-1 border ${!filters.category ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>ALL</Link>
                     <Link href="/events?category=event" className={`px-3 py-1 border ${filters.category === 'event' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>EVENTS</Link>
                     <Link href="/events?category=hackathon" className={`px-3 py-1 border ${filters.category === 'hackathon' ? 'border-primary text-primary bg-primary/10' : 'border-transparent hover:border-primary/50'}`}>HACKATHONS</Link>
@@ -70,12 +70,12 @@ export default function EventsIndex({ events, filters, tags }) {
                                     {new Date(event.event_date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}
                                 </div>
                                  <div className="flex items-center gap-2 text-muted-foreground">
-                                      <Users className="w-4 h-4" /> {event.attendees_count} nodes connected
+                                      <Users className="w-4 h-4" /> {event.attendees_count} attending
                                  </div>
                                  <div className="flex items-center gap-2 text-primary/60 border-t border-primary/10 pt-2 mt-2">
                                       <User className="w-3 h-3" />
-                                      <Link href={`/profile/${event.user.username}`} className="hover:underline">
-                                          [BY: @{event.user.username}]
+                                      <Link href={`/profile/${event.user.username}`} className="hover:underline text-[8px]">
+                                          Posted by @{event.user.username}
                                       </Link>
                                  </div>
                             </div>
@@ -89,7 +89,7 @@ export default function EventsIndex({ events, filters, tags }) {
                             </div>
 
                             <Link href={`/events/${event.id}`} className="mt-6 w-full text-center border border-border py-2 text-xs font-bold uppercase transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
-                                ACCESS_NODE //
+                                View Details
                             </Link>
                         </motion.div>
                     ))}

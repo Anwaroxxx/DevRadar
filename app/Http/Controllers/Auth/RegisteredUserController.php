@@ -35,6 +35,6 @@ class RegisteredUserController extends Controller
         $user->awardXp(0, 'registered', 'Welcome to DevRadar Morocco!');
 
         Auth::login($user);
-        return redirect()->route('home');
+        return redirect()->route('dashboard');
     }
 }

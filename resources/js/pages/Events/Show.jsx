@@ -35,7 +35,7 @@ export default function EventShow({ event }) {
             <div className="max-w-5xl mx-auto px-4 py-8">
                 
                 <Link href="/events" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors font-mono mb-6 group">
-                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> RETURN_TO_GRID
+                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Events
                 </Link>
 
                 <motion.div 
@@ -47,7 +47,7 @@ export default function EventShow({ event }) {
 
                     <div className="p-8 md:w-2/3 flex flex-col relative z-10">
                         <div className="text-xs font-mono text-primary mb-4 border border-primary px-2 py-1 inline-block uppercase w-fit tracking-widest bg-primary/10">
-                            &gt; [TYPE]: {event.category}
+                            Category: {event.category}
                         </div>
                         
                         <h1 className="text-3xl md:text-5xl font-black mb-4 uppercase leading-tight">{event.title}</h1>
@@ -55,7 +55,7 @@ export default function EventShow({ event }) {
                         <div className="flex flex-wrap gap-4 font-mono text-sm text-muted-foreground mb-8">
                             <span className="flex items-center gap-2"><MapPin className="w-4 h-4" /> {event.city}</span>
                             <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> {new Date(event.event_date).toLocaleString('en-GB')}</span>
-                            <span className="flex items-center gap-2"><Users className="w-4 h-4" /> ORG: {event.organizer}</span>
+                            <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Organizer: {event.organizer}</span>
                         </div>
 
                         <div className="font-mono text-base leading-relaxed text-foreground/80 mb-8 whitespace-pre-line border-l-2 border-primary/30 pl-4 py-2">
@@ -80,25 +80,25 @@ export default function EventShow({ event }) {
                                         <input type="hidden" name="_token" value={usePage().props.csrf_token} />
                                         <button className={`px-6 py-3 font-bold uppercase flex items-center gap-2 transition-all ${isAttending ? 'bg-primary/20 text-primary border border-primary' : 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_25px_rgba(34,197,94,0.6)]'}`}>
                                             {isAttending ? <CheckCircle className="w-5 h-5" /> : <TerminalSquare className="w-5 h-5" />}
-                                            {isAttending ? 'CONNECTION_ESTABLISHED' : 'CONNECT_TO_NODE'}
+                                            {isAttending ? 'Attending' : 'Attend Event'}
                                         </button>
                                     </form>
                                     <form action={`/events/${event.id}/save`} method="POST">
                                         <input type="hidden" name="_token" value={usePage().props.csrf_token} />
                                         <button className={`px-4 py-3 border border-primary/50 text-sm font-bold uppercase transition-colors flex items-center gap-2 ${isSaved ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:border-primary'}`}>
                                             {isSaved ? <Bookmark className="w-4 h-4 fill-primary" /> : <Bookmark className="w-4 h-4" />}
-                                            {isSaved ? 'SAVED_IN_MEM' : 'SAVE_MEMORY'}
+                                            {isSaved ? 'Saved' : 'Save Event'}
                                         </button>
                                     </form>
                                 </>
                             ) : (
                                 <Link href="/login" className="bg-primary text-primary-foreground px-6 py-3 font-bold uppercase transition-all shadow-[0_0_15px_rgba(34,197,94,0.4)] hover:shadow-[0_0_25px_rgba(34,197,94,0.6)]">
-                                    AUTH_REQUIRED // LOGIN
+                                    Login to interact
                                 </Link>
                             )}
                             {event.website && (
                                 <a href={event.website} target="_blank" rel="noopener noreferrer" className="ml-auto text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-mono text-sm underline">
-                                     <Globe className="w-4 h-4" /> EXTERNAL_LINK
+                                     <Globe className="w-4 h-4" /> Website
                                 </a>
                             )}
                         </div>
@@ -110,10 +110,10 @@ export default function EventShow({ event }) {
                             <div className="absolute top-0 right-0 w-2 h-2 bg-primary animate-ping m-2"></div>
                             <h3 className="text-xs text-muted-foreground uppercase mb-1">Grid Status</h3>
                             <div className="text-3xl font-bold text-primary flex items-end gap-2">
-                                {event.attendees_count} <span className="text-sm font-normal text-muted-foreground mb-1">nodes</span>
+                                {event.attendees_count} <span className="text-sm font-normal text-muted-foreground mb-1">attending</span>
                             </div>
                             <div className="text-xs text-muted-foreground mt-2 border-t border-border pt-2 flex items-center gap-1 justify-between">
-                                <span>XP_REWARD</span>
+                                <span>Contribution XP</span>
                                 <span className="text-primary font-bold flex items-center"><Zap className="w-3 h-3 fill-primary mr-1" /> +10 XP</span>
                             </div>
                         </div>
