@@ -59,6 +59,16 @@ class CommunityController extends Controller
             );
         }
 
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        if ($admins->isNotEmpty()) {
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+                'Community',
+                $community->name,
+                "A new community '{$community->name}' was created by {$request->user()->username}.",
+                "/admin/communities"
+            ));
+        }
+
         return redirect()->route('communities.index')->with('success', 'Group submission verified. Pending approval.');
     }
 
@@ -126,6 +136,16 @@ class CommunityController extends Controller
         ]));
 
         $request->user()->awardXp(20, 'community_post', "Shared a thought in {$community->name}", $post);
+
+        $followers = $community->followers()->where('users.id', '!=', $request->user()->id)->get();
+        if ($followers->isNotEmpty()) {
+            \Illuminate\Support\Facades\Notification::send($followers, new \App\Notifications\NewContentNotification(
+                'post',
+                $post->title,
+                $request->user(),
+                "/communities/{$community->id}"
+            ));
+        }
 
         return back()->with('success', 'Thought broadcasted successfully.');
     }

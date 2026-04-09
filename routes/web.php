@@ -162,6 +162,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/ai-access', [\App\Http\Controllers\Admin\SystemsController::class, 'aiAccess'])->name('ai-access');
         Route::get('/analytics', [\App\Http\Controllers\Admin\SystemsController::class, 'analytics'])->name('analytics');
         Route::get('/settings', [\App\Http\Controllers\Admin\SystemsController::class, 'settings'])->name('settings');
+        Route::post('/settings/broadcast', [\App\Http\Controllers\Admin\SystemsController::class, 'broadcast'])->name('settings.broadcast');
         Route::post('/settings/flags/{flag}/toggle', [\App\Http\Controllers\Admin\SystemsController::class, 'toggleFeatureFlag'])->name('settings.flags.toggle');
         Route::get('/audit-logs', [\App\Http\Controllers\Admin\SystemsController::class, 'auditLogs'])->name('audit-logs');
     });

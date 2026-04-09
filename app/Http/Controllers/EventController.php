@@ -88,6 +88,16 @@ class EventController extends Controller
             );
         }
 
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        if ($admins->isNotEmpty()) {
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+                'Event',
+                $event->title,
+                "A new event '{$event->title}' was proposed by {$request->user()->username}.",
+                "/admin/events"
+            ));
+        }
+
         return redirect()->route('events.show', $event)->with('success', '+30 XP earned for submitting event!');
     }
 

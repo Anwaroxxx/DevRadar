@@ -10,7 +10,6 @@ export default function HackerLayout({ children }) {
     const user = auth?.user;
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMoreOpen, setIsMoreOpen] = useState(false);
-    const [time, setTime] = useState(new Date());
     const [showNotification, setShowNotification] = useState(true);
 
     // Auto-dismiss notification after 5 seconds
@@ -23,12 +22,6 @@ export default function HackerLayout({ children }) {
             return () => clearTimeout(timer);
         }
     }, [flash]);
-
-    // Live Clock Logic
-    useEffect(() => {
-        const timer = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
     
     // Forced Dark Mode Identity
     useEffect(() => {
@@ -121,26 +114,20 @@ export default function HackerLayout({ children }) {
                                     ))}
                                 </div>
                             </div>
+                        </nav>
 
-                            {/* Admin Link - if user is admin */}
+                        {/* Right Area: Admin & User */}
+                        <div className="flex items-center gap-3 lg:gap-6 shrink-0 relative z-[100]">
+                            {/* Admin Link - directly in right area for better visibility */}
                             {adminLinks.length > 0 && (
                                 <Link 
                                     href="/admin" 
-                                    className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 ml-4 border-l border-yellow-400/30 pl-4 shrink-0"
+                                    className="hidden md:flex text-yellow-400 hover:text-yellow-300 transition-colors items-center gap-2 border border-yellow-400/30 bg-yellow-400/10 px-3 py-1.5 rounded-sm shrink-0 font-bold uppercase tracking-widest text-xs"
                                 >
                                     <Shield className="w-4 h-4" /> 
-                                    Admin
+                                    Admin Panel
                                 </Link>
                             )}
-                        </nav>
-
-                        {/* Right Area: Clock & User */}
-                        <div className="flex items-center gap-3 lg:gap-6 shrink-0">
-                            {/* System Clock */}
-                            <div className="hidden lg:flex items-center gap-2 border-l border-border pl-6 font-mono text-[10px] text-muted-foreground/60 tracking-[0.2em]">
-                                <ClockIcon className="w-3 h-3 text-primary/40" />
-                                {time.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                            </div>
 
                             {user ? (
                                 <div className="flex items-center gap-3 lg:gap-4 ml-4">
@@ -153,25 +140,26 @@ export default function HackerLayout({ children }) {
                                             )}
                                         </button>
                                         
-                                        <div className="absolute right-0 mt-2 w-80 bg-black/95 border border-primary/30 shadow-[0_0_20px_rgba(34,197,94,0.1)] hidden group-hover:block z-[100] p-4 text-left font-mono">
+                                        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-black/95 border border-primary/30 shadow-[0_10px_40px_rgba(34,197,94,0.3)] hidden group-hover:block z-[9999] p-4 text-left font-mono backdrop-blur-3xl rounded-sm">
                                             <div className="text-xs text-primary font-bold uppercase border-b border-primary/30 pb-2 mb-2 flex justify-between items-center tracking-widest">
                                                 <span>Notifications</span>
-                                                <Link href="/notifications" className="text-[8px] hover:underline">[ VIEW ALL ]</Link>
+                                                <Link href="/notifications" className="text-[9px] hover:underline bg-primary/10 px-2 py-0.5 rounded-sm">[ VIEW ALL ]</Link>
                                             </div>
-                                            <div className="max-h-64 overflow-y-auto pr-1">
+                                            <div className="max-h-80 overflow-y-auto pr-1 custom-scrollbar">
                                                 {auth?.notifications?.length > 0 ? (
                                                     auth.notifications.map((n) => (
-                                                        <Link key={n.id} href={n.data.action_url} className="block p-3 border-b border-white/5 hover:bg-primary/10 transition-colors group/notif">
-                                                            <div className="text-xs text-foreground group-hover/notif:text-primary transition-colors leading-tight">{n.data.message}</div>
-                                                            <div className="text-[9px] text-muted-foreground mt-1 opacity-70 flex justify-between">
-                                                                <span>{new Date(n.created_at).toLocaleTimeString()}</span>
-                                                                <span className="text-primary italic">[{n.data.type || 'SYS'}]</span>
+                                                        <Link key={n.id} href={n.data.action_url || '#'} className="block p-3 border-b border-white/5 hover:bg-primary/20 transition-colors group/notif relative overflow-hidden">
+                                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/50 group-hover/notif:bg-primary transition-colors"></div>
+                                                            <div className="text-xs text-foreground group-hover/notif:text-white transition-colors leading-relaxed pl-2">{n.data.message}</div>
+                                                            <div className="text-[10px] text-muted-foreground mt-2 opacity-70 flex justify-between pl-2">
+                                                                <span>{new Date(n.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                                                <span className="text-primary tracking-widest uppercase">[{n.data.type || 'SYS'}]</span>
                                                             </div>
                                                         </Link>
                                                     ))
                                                 ) : (
-                                                    <div className="p-4 text-xs text-center text-muted-foreground uppercase opacity-50 border border-dashed border-border/50">
-                                                        No new activity.
+                                                    <div className="p-6 text-xs text-center text-muted-foreground uppercase opacity-50 border border-dashed border-border/50 bg-black/50">
+                                                        No new signals detected.
                                                     </div>
                                                 )}
                                             </div>
@@ -260,7 +248,7 @@ export default function HackerLayout({ children }) {
             </header>
 
             {/* Neural Notification Cluster */}
-            <div className="fixed top-20 right-6 z-[60] flex flex-col gap-4 pointer-events-none w-80">
+            <div className="fixed top-20 right-6 z-[9999] flex flex-col gap-4 pointer-events-none w-80">
                 <AnimatePresence>
                     {showNotification && (flash?.success || flash?.error || flash?.info) && (
                         <motion.div

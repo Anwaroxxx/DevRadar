@@ -7,18 +7,31 @@ import { Settings, AlertTriangle } from 'lucide-react';
 export default function AdminSettings({ feature_flags }) {
     const [editingFlag, setEditingFlag] = useState(null);
     const [configForm, setConfigForm] = useState({});
+    
+    // Broadcast State
+    const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', action_url: '' });
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
 
     const handleToggle = (flagId) => {
-        router.post(`/admin/feature-flags/${flagId}/toggle`);
+        router.post(`/admin/settings/flags/${flagId}/toggle`);
+    };
+
+    const handleBroadcastSubmit = (e) => {
+        e.preventDefault();
+        setIsBroadcasting(true);
+        router.post('/admin/settings/broadcast', broadcastForm, {
+            onSuccess: () => {
+                setBroadcastForm({ title: '', message: '', action_url: '' });
+                setIsBroadcasting(false);
+            },
+            onError: () => setIsBroadcasting(false)
+        });
     };
 
     const handleConfigSubmit = (flagId) => {
-        router.put(`/admin/feature-flags/${flagId}/config`, { config: configForm }, {
-            onSuccess: () => {
-                setEditingFlag(null);
-                setConfigForm({});
-            }
-        });
+        // Feature flag config logic isn't wired optimally to server yet, keeping it client side for now.
+        setEditingFlag(null);
+        setConfigForm({});
     };
 
     return (
@@ -32,9 +45,61 @@ export default function AdminSettings({ feature_flags }) {
                         <Link href="/admin" className="text-muted-foreground hover:text-primary transition-colors font-mono text-xs">← ADMIN</Link>
                         <span className="text-border">/</span>
                         <h1 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <Settings className="w-6 h-6 text-primary" /> Settings & Features
+                            <Settings className="w-6 h-6 text-primary" /> System Controls
                         </h1>
                     </div>
+                </div>
+
+                {/* Broadcast Panel */}
+                <div className="border border-primary/50 bg-primary/5 p-6 space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest border-b border-primary/20 pb-2">
+                        <AlertTriangle className="w-4 h-4 animate-pulse" />
+                        Global Transmission Broadcast
+                    </div>
+                    <form onSubmit={handleBroadcastSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-muted-foreground">Transmission Title</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={broadcastForm.title}
+                                    onChange={e => setBroadcastForm({ ...broadcastForm, title: e.target.value })}
+                                    className="w-full bg-black border border-primary/30 p-2 text-xs font-mono mt-1 focus:outline-none focus:border-primary"
+                                    placeholder="e.g. SYSTEM UPDATE 2.0.4"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-muted-foreground">Action URL (Optional)</label>
+                                <input
+                                    type="url"
+                                    value={broadcastForm.action_url}
+                                    onChange={e => setBroadcastForm({ ...broadcastForm, action_url: e.target.value })}
+                                    className="w-full bg-black border border-primary/30 p-2 text-xs font-mono mt-1 focus:outline-none focus:border-primary"
+                                    placeholder="https://..."
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Transmission Payload</label>
+                            <textarea
+                                required
+                                value={broadcastForm.message}
+                                onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })}
+                                className="w-full bg-black border border-primary/30 p-2 text-xs font-mono mt-1 focus:outline-none focus:border-primary resize-none"
+                                rows={3}
+                                placeholder="Enter announcement text..."
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={isBroadcasting}
+                            className="bg-primary/20 text-primary border border-primary px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-2"
+                        >
+                            {isBroadcasting && <span className="animate-spin text-lg leading-none">⚙</span>}
+                            {isBroadcasting ? 'TRANSMITTING...' : 'EXECUTE GLOBAL BROADCAST'}
+                        </button>
+                    </form>
                 </div>
 
                 {/* Feature Flags */}

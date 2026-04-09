@@ -104,6 +104,25 @@ class SystemsController extends Controller
         return back()->with('success', "Feature flag status updated.");
     }
 
+    public function broadcast(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string|max:1000',
+            'action_url' => 'nullable|url',
+        ]);
+
+        $users = User::all();
+        \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\FeatureAnnouncement(
+            $data['title'],
+            $data['message'],
+            $data['action_url'] ?? '/'
+        ));
+
+        AuditLog::log(auth()->id(), 'broadcast_announcement', 'user', 0, $data, "Broadcasted announcement: {$data['title']}");
+        return back()->with('success', 'Announcement broadcasted to all active nodes.');
+    }
+
     // --- Audit Logs ---
     public function auditLogs(Request $request)
     {

@@ -19,13 +19,23 @@ class SupportController extends Controller
             'message' => 'required|string|min:20|max:2000',
         ]);
 
-        SupportTicket::create([
+        $ticket = SupportTicket::create([
             'user_id' => auth()->id(), // null if guest
             'email'   => $validated['email'],
             'type'    => $validated['type'],
             'message' => $validated['message'],
             'status'  => 'open',
         ]);
+
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        if ($admins->isNotEmpty()) {
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+                'Support Ticket',
+                "New Ticket ({$validated['type']})",
+                "A new support ticket was submitted by {$validated['email']}.",
+                "/admin/support"
+            ));
+        }
 
         return back()->with('success', 'Your ticket has been submitted. Our team will respond within 24 hours.');
     }
