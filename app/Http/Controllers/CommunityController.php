@@ -42,8 +42,8 @@ class CommunityController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
-            'platform'    => 'required|string',
-            'join_link'   => 'required|url',
+            'platform'    => 'nullable|string',
+            'join_link'   => 'nullable|string|max:255',
             'category'    => 'required|string',
         ]);
 
@@ -73,8 +73,8 @@ class CommunityController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
-            'platform'    => 'required|string',
-            'join_link'   => 'required|url',
+            'platform'    => 'nullable|string',
+            'join_link'   => 'nullable|string|max:255',
             'city'        => 'nullable|string',
             'latitude'    => 'nullable|numeric',
             'longitude'   => 'nullable|numeric',

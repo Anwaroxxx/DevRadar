@@ -186,13 +186,11 @@ class ProfileController extends Controller
                 'mime' => $request->file('avatar_file')->getMimeType(),
             ]);
             
+            // Store relative path only — the User accessor will generate the correct full URL
             $path = $request->file('avatar_file')->store('avatars', 'public');
-            $data['avatar'] = '/storage/' . $path;
+            $data['avatar'] = $path;
             
-            \Log::info('File stored successfully', [
-                'stored_path' => $path,
-                'avatar_url' => $data['avatar'],
-            ]);
+            \Log::info('File stored', ['path' => $path]);
         }
 
         $skills = $data['skills'] ?? [];
@@ -222,17 +220,17 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar_file')) {
             // Delete old avatar if it exists
-            if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
-                $publicPath = ltrim(substr($user->avatar, strlen('/storage/')), '/');
-                Storage::disk('public')->delete($publicPath);
+            if ($user->getRawOriginal('avatar') && !str_starts_with($user->getRawOriginal('avatar'), 'http')) {
+                $old = ltrim(preg_replace('#^/?storage/#', '', $user->getRawOriginal('avatar')), '/');
+                Storage::disk('public')->delete($old);
             }
 
+            // Store relative path only — accessor generates the full URL
             $path = $request->file('avatar_file')->store('avatars/' . $user->id, 'public');
-            $avatarUrl = '/storage/' . $path;
             
-            $user->update(['avatar' => $avatarUrl]);
+            $user->update(['avatar' => $path]);
 
-            return response()->json(['avatar' => $avatarUrl, 'message' => 'Profile photo updated']);
+            return response()->json(['avatar' => asset('storage/' . $path), 'message' => 'Profile photo updated']);
         }
 
         return response()->json(['message' => 'No file uploaded'], 400);
@@ -285,10 +283,12 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Best-effort delete of previously stored avatar file (if we own it).
-        if ($user->avatar && str_starts_with($user->avatar, '/storage/')) {
-            $publicPath = ltrim(substr($user->avatar, strlen('/storage/')), '/'); // e.g. avatars/foo.jpg
-            Storage::disk('public')->delete($publicPath);
+        // Use getRawOriginal to get the stored path, not the accessor's full URL
+        if ($raw = $user->getRawOriginal('avatar')) {
+            if (!str_starts_with($raw, 'http')) {
+                $relativePath = ltrim(preg_replace('#^/?storage/#', '', $raw), '/');
+                Storage::disk('public')->delete($relativePath);
+            }
         }
 
         $user->update(['avatar' => null]);

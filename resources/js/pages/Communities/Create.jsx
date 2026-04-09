@@ -69,11 +69,11 @@ export default function CreateCommunity() {
                                         onChange={e => setData('platform', e.target.value)}
                                         className="w-full bg-black/40 border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none cursor-pointer uppercase text-xs"
                                     >
+                                        <option value="DevRadar" className="bg-black">DEVRADAR_INTERNAL</option>
                                         <option value="Discord" className="bg-black">DISCORD</option>
                                         <option value="Slack" className="bg-black">SLACK</option>
                                         <option value="Telegram" className="bg-black">TELEGRAM</option>
                                         <option value="WhatsApp" className="bg-black">WHATSAPP</option>
-                                        <option value="Meetup" className="bg-black">MEETUP</option>
                                         <option value="Other" className="bg-black">OTHER</option>
                                     </select>
                                 </div>
@@ -100,15 +100,14 @@ export default function CreateCommunity() {
 
                                 <div>
                                     <label className="block text-[10px] text-primary/60 uppercase mb-3 tracking-widest font-black">
-                                         [0x04] Signal_Invite (URL)
+                                         [0x04] Signal_Invite (Optional)
                                     </label>
                                     <input
-                                        type="url"
+                                        type="text"
                                         value={data.join_link}
                                         onChange={e => setData('join_link', e.target.value)}
                                         className="w-full bg-black/40 border border-primary/30 p-3 text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-xs"
-                                        placeholder="https://hub-access.signal/..."
-                                        required
+                                        placeholder="Internal members only if empty..."
                                     />
                                     {errors.join_link && <div className="text-destructive text-[10px] mt-1">{errors.join_link}</div>}
                                 </div>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -55,6 +56,18 @@ class User extends Authenticatable
             }
         }
         return $array;
+    }
+
+    public function getAvatarAttribute($value): ?string
+    {
+        if (!$value) return null;
+        // If it's already an absolute URL (e.g. from OAuth), return as-is
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value;
+        }
+        // Strip leading /storage/ or storage/ and generate full URL via asset()
+        $relativePath = ltrim(preg_replace('#^/?storage/#', '', $value), '/');
+        return asset('storage/' . $relativePath);
     }
 
     public function getHasAiAccessAttribute(): bool
