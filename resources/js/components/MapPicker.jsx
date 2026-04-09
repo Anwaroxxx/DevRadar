@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icons in Leaflet + React
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -15,7 +14,6 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
-// Custom styled marker for hacker aesthetic
 const hackerIcon = new L.DivIcon({
     className: 'hacker-map-marker',
     html: `<div class="w-6 h-6 bg-primary/20 border-2 border-primary rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(34,197,94,0.5)]">

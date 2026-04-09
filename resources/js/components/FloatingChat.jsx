@@ -53,6 +53,11 @@ export default function FloatingChat() {
 
     // WebSocket listener
     useEffect(() => {
+        if (!window.Echo) {
+            console.warn("FloatingChat: Real-time updates disabled (Echo not initialized).");
+            return;
+        }
+
         const channel = window.Echo.private(`chat.${auth.user.id}`)
             .listen('MessageSent', (e) => {
                 const msg = e.message;

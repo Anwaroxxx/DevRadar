@@ -27,7 +27,12 @@ export default function ChatIndex({ chatUsers = [], selectedUser = null, message
     }, [messages]);
 
     useEffect(() => {
-        if (!auth.user) return;
+        if (!auth.user || !window.Echo) {
+            if (!window.Echo && auth.user) {
+                console.warn("ChatIndex: Real-time updates disabled (Echo not initialized).");
+            }
+            return;
+        }
 
         const channel = window.Echo.private(`chat.${auth.user.id}`)
             .listen('MessageSent', (e) => {
