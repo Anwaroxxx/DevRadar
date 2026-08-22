@@ -10,5 +10,8 @@ class Badge extends Model
         'slug', 'name', 'track', 'level', 'icon', 'icon_key', 'description', 'requirement', 'xp_threshold',
     ];
 
-    public function users() { return $this->belongsToMany(User::class, 'badge_user')->withTimestamps(); }
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'badge_user')->withTimestamps();
+    }
 }

@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Achievement;
-use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\User;
 
 class AchievementService
 {
@@ -15,10 +15,14 @@ class AchievementService
      */
     public static function evaluate(User $user)
     {
-        if (self::$isEvaluating) return;
-        
+        if (self::$isEvaluating) {
+            return;
+        }
+
         // Don't evaluate for soft deleted users
-        if ($user->trashed()) return;
+        if ($user->trashed()) {
+            return;
+        }
 
         self::$isEvaluating = true;
 
@@ -41,8 +45,7 @@ class AchievementService
                     if ($achievement->metric_key === 'xp' && $user->xp >= $achievement->trigger_value) {
                         $unlocked = true;
                     }
-                } 
-                elseif ($achievement->trigger_type === 'count_based' || $achievement->trigger_type === 'one_time') {
+                } elseif ($achievement->trigger_type === 'count_based' || $achievement->trigger_type === 'one_time') {
                     // If it's count based, calculate the metric
                     $count = self::getMetricCount($user, $achievement->metric_key);
                     if ($count >= $achievement->trigger_value) {
@@ -64,7 +67,7 @@ class AchievementService
             }
 
             // Ideally, in a real application, you might dispatch an event to broadcast the new unlocks to the frontend
-            if (!empty($newUnlocks)) {
+            if (! empty($newUnlocks)) {
                 // dispatch(new \App\Events\AchievementsUnlocked($user, $newUnlocks));
             }
         } finally {
@@ -96,8 +99,11 @@ class AchievementService
         $fields = ['name', 'email', 'username', 'bio', 'avatar', 'github_url', 'location', 'city'];
         $filledCount = 0;
         foreach ($fields as $field) {
-            if (!empty($user->{$field})) $filledCount++;
+            if (! empty($user->{$field})) {
+                $filledCount++;
+            }
         }
+
         return (int) (($filledCount / count($fields)) * 100);
     }
 }

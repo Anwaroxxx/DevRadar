@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Mail\ContentStatusMail;
 use App\Models\JobListing;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class JobController extends Controller
 {
@@ -17,9 +17,15 @@ class JobController extends Controller
             ->where('approval_status', 'approved')
             ->orderByDesc('created_at');
 
-        if ($request->city) $query->where('city', $request->city);
-        if ($request->type) $query->where('type', $request->type);
-        if ($request->remote) $query->where('is_remote', true);
+        if ($request->city) {
+            $query->where('city', $request->city);
+        }
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
+        if ($request->remote) {
+            $query->where('is_remote', true);
+        }
         if ($request->tech) {
             $query->whereJsonContains('tech_stack', $request->tech);
         }
@@ -27,7 +33,7 @@ class JobController extends Controller
         $jobs = $query->paginate(12)->withQueryString();
 
         return Inertia::render('Jobs/Index', [
-            'jobs'    => $jobs,
+            'jobs' => $jobs,
             'filters' => $request->only(['city', 'type', 'remote', 'tech']),
         ]);
     }
@@ -40,24 +46,24 @@ class JobController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'company'     => 'required|string',
-            'city'        => 'required|string',
-            'type'        => 'required|in:full-time,internship,freelance',
-            'is_remote'   => 'boolean',
+            'title' => 'required|string|max:255',
+            'company' => 'required|string',
+            'city' => 'required|string',
+            'type' => 'required|in:full-time,internship,freelance',
+            'is_remote' => 'boolean',
             'description' => 'required|string',
-            'apply_link'  => 'required|url',
-            'tech_stack'  => 'nullable|array',
-            'salary_range'=> 'nullable|string',
-            'latitude'    => 'nullable|numeric',
-            'longitude'   => 'nullable|numeric',
+            'apply_link' => 'required|url',
+            'tech_stack' => 'nullable|array',
+            'salary_range' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $job = $request->user()->jobListings()->create(array_merge($data, [
             'approval_status' => $request->user()->role === 'admin' ? 'approved' : 'pending',
         ]));
 
-        if (!empty($request->user()->email)) {
+        if (! empty($request->user()->email)) {
             Mail::to($request->user()->email)->queue(
                 new ContentStatusMail('job', $job->title, 'pending')
             );
@@ -69,6 +75,7 @@ class JobController extends Controller
     public function edit(JobListing $job)
     {
         $this->authorize('update', $job);
+
         return Inertia::render('Jobs/Edit', ['job' => $job]);
     }
 
@@ -76,20 +83,21 @@ class JobController extends Controller
     {
         $this->authorize('update', $job);
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'company'     => 'required|string',
-            'city'        => 'required|string',
-            'type'        => 'required|in:full-time,internship,freelance',
-            'is_remote'   => 'boolean',
+            'title' => 'required|string|max:255',
+            'company' => 'required|string',
+            'city' => 'required|string',
+            'type' => 'required|in:full-time,internship,freelance',
+            'is_remote' => 'boolean',
             'description' => 'required|string',
-            'apply_link'  => 'required|url',
-            'tech_stack'  => 'nullable|array',
-            'salary_range'=> 'nullable|string',
-            'latitude'    => 'nullable|numeric',
-            'longitude'   => 'nullable|numeric',
+            'apply_link' => 'required|url',
+            'tech_stack' => 'nullable|array',
+            'salary_range' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $job->update($data);
+
         return redirect()->route('jobs.index')->with('success', 'Post updated successfully.');
     }
 
@@ -97,6 +105,7 @@ class JobController extends Controller
     {
         $this->authorize('delete', $job);
         $job->delete();
+
         return redirect()->route('jobs.index')->with('success', 'Post removed successfully.');
     }
 }

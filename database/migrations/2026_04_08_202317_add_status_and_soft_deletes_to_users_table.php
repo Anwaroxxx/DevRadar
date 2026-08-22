@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'account_status')) {
+            if (! Schema::hasColumn('users', 'account_status')) {
                 $table->enum('account_status', ['active', 'deleted', 'banned'])->default('active')->after('id');
             }
-            if (!Schema::hasColumn('users', 'deleted_at')) {
+            if (! Schema::hasColumn('users', 'deleted_at')) {
                 $table->softDeletes();
             }
         });

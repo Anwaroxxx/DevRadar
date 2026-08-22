@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class CommunitySnapshot extends Model
 {
@@ -14,7 +14,7 @@ class CommunitySnapshot extends Model
         'followers_count',
         'posts_count',
         'comments_count',
-        'engagement_signal'
+        'engagement_signal',
     ];
 
     public function community()

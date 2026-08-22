@@ -10,7 +10,7 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         // Get all IDs involved in blocking (both ways)
         $blockedByMe = $user->blockedUsers()->pluck('blocked_user_id')->toArray();
         $blockingMe = $user->blockedByUsers()->pluck('user_id')->toArray();
@@ -18,17 +18,17 @@ class NotificationController extends Controller
 
         // Get notifications
         $notifications = $user->notifications()
-            ->where(function($q) use ($restrictedIds) {
+            ->where(function ($q) use ($restrictedIds) {
                 // Filter out notifications where the 'sender_id' in the JSON data is a restricted user
                 foreach ($restrictedIds as $id) {
-                    $q->where('data', 'not like', '%"sender_id":' . $id . '%')
-                      ->where('data', 'not like', '%"follower_id":' . $id . '%');
+                    $q->where('data', 'not like', '%"sender_id":'.$id.'%')
+                        ->where('data', 'not like', '%"follower_id":'.$id.'%');
                 }
             })
             ->paginate(20);
 
         return Inertia::render('Notifications/Index', [
-            'notifications' => $notifications
+            'notifications' => $notifications,
         ]);
     }
 

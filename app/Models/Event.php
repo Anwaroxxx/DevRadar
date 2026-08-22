@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
@@ -16,17 +16,26 @@ class Event extends Model
     ];
 
     protected $casts = [
-        'event_date'  => 'datetime',
+        'event_date' => 'datetime',
         'is_approved' => 'boolean',
-        'latitude'    => 'float',
-        'longitude'   => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
-    public function user() { return $this->belongsTo(User::class)->withTrashed(); }
-    public function tags() { return $this->belongsToMany(Tag::class, 'event_tag'); }
-    public function attendees() {
+    public function user()
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'event_tag');
+    }
+
+    public function attendees()
+    {
         return $this->belongsToMany(User::class, 'event_user')
-                    ->withPivot('attending', 'saved')
-                    ->withTimestamps();
+            ->withPivot('attending', 'saved')
+            ->withTimestamps();
     }
 }

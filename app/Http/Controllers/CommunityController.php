@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Community;
-use App\Models\CommunityPost;
-use App\Models\CommunityComment;
-use App\Models\ContentReport;
-use App\Models\AuditLog;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Auth;
 use App\Mail\ContentStatusMail;
+use App\Models\AuditLog;
+use App\Models\Community;
+use App\Models\CommunityComment;
+use App\Models\CommunityPost;
+use App\Models\ContentReport;
+use App\Models\User;
+use App\Notifications\AdminActionRequired;
+use App\Notifications\NewContentNotification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Inertia\Inertia;
 
 class CommunityController extends Controller
 {
@@ -22,14 +26,18 @@ class CommunityController extends Controller
             ->where('approval_status', 'approved')
             ->orderByDesc('member_count');
 
-        if ($request->category) $query->where('category', $request->category);
-        if ($request->city) $query->where('city', $request->city);
+        if ($request->category) {
+            $query->where('category', $request->category);
+        }
+        if ($request->city) {
+            $query->where('city', $request->city);
+        }
 
         $communities = $query->paginate(12)->withQueryString();
 
         return Inertia::render('Communities/Index', [
             'communities' => $communities,
-            'filters'     => $request->only(['category', 'city']),
+            'filters' => $request->only(['category', 'city']),
         ]);
     }
 
@@ -41,11 +49,11 @@ class CommunityController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'platform'    => 'nullable|string',
-            'join_link'   => 'nullable|string|max:255',
-            'category'    => 'required|string',
+            'platform' => 'nullable|string',
+            'join_link' => 'nullable|string|max:255',
+            'category' => 'required|string',
         ]);
 
         $community = $request->user()->communities()->create(array_merge($data, [
@@ -53,19 +61,19 @@ class CommunityController extends Controller
             'approved_by' => null,
         ]));
 
-        if (!empty($request->user()->email)) {
+        if (! empty($request->user()->email)) {
             Mail::to($request->user()->email)->queue(
                 new ContentStatusMail('community', $community->name, 'pending')
             );
         }
 
-        $admins = \App\Models\User::where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         if ($admins->isNotEmpty()) {
-            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+            Notification::send($admins, new AdminActionRequired(
                 'Community',
                 $community->name,
                 "A new community '{$community->name}' was created by {$request->user()->username}.",
-                "/admin/communities"
+                '/admin/communities'
             ));
         }
 
@@ -75,6 +83,7 @@ class CommunityController extends Controller
     public function edit(Community $community)
     {
         $this->authorize('update', $community);
+
         return Inertia::render('Communities/Edit', ['community' => $community]);
     }
 
@@ -82,17 +91,18 @@ class CommunityController extends Controller
     {
         $this->authorize('update', $community);
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'platform'    => 'nullable|string',
-            'join_link'   => 'nullable|string|max:255',
-            'city'        => 'nullable|string',
-            'latitude'    => 'nullable|numeric',
-            'longitude'   => 'nullable|numeric',
-            'category'    => 'required|string',
+            'platform' => 'nullable|string',
+            'join_link' => 'nullable|string|max:255',
+            'city' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'category' => 'required|string',
         ]);
 
         $community->update($data);
+
         return redirect()->route('communities.index')->with('success', 'Group details updated.');
     }
 
@@ -100,6 +110,7 @@ class CommunityController extends Controller
     {
         $this->authorize('delete', $community);
         $community->delete();
+
         return redirect()->route('communities.index')->with('success', 'Group entry removed.');
     }
 
@@ -139,7 +150,7 @@ class CommunityController extends Controller
 
         $followers = $community->followers()->where('users.id', '!=', $request->user()->id)->get();
         if ($followers->isNotEmpty()) {
-            \Illuminate\Support\Facades\Notification::send($followers, new \App\Notifications\NewContentNotification(
+            Notification::send($followers, new NewContentNotification(
                 'post',
                 $post->title,
                 $request->user(),
@@ -160,7 +171,7 @@ class CommunityController extends Controller
             'user_id' => $request->user()->id,
         ]));
 
-        $request->user()->awardXp(5, 'community_comment', "Replied to a thread", $post);
+        $request->user()->awardXp(5, 'community_comment', 'Replied to a thread', $post);
 
         return back()->with('success', 'Signal received.');
     }
@@ -169,6 +180,7 @@ class CommunityController extends Controller
     {
         // Simple upvote for now, just increment
         $post->increment('upvotes_count');
+
         return back();
     }
 
@@ -235,27 +247,29 @@ class CommunityController extends Controller
 
     private function processEscalation($user)
     {
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         // Count pending reports across all content owned by this user
         $reportCount = ContentReport::where('status', 'pending')
             ->whereIn('content_type', ['community_post', 'community_comment', 'event', 'job', 'message'])
-            ->whereHasMorph('content', ['App\Models\CommunityPost', 'App\Models\CommunityComment', 'App\Models\Event', 'App\Models\JobListing', 'App\Models\Message'], function($query) use ($user) {
-                // This is a bit complex due to different owner column names, 
+            ->whereHasMorph('content', ['App\Models\CommunityPost', 'App\Models\CommunityComment', 'App\Models\Event', 'App\Models\JobListing', 'App\Models\Message'], function ($query) {
+                // This is a bit complex due to different owner column names,
                 // but since they all have user_id, it might work if we just filter by user_id in the content table
             })->count();
-            
+
         // Simpler approach for now: Get IDs of content owned by user and count reports on them
         $postIds = CommunityPost::where('user_id', $user->id)->pluck('id');
         $commentIds = CommunityComment::where('user_id', $user->id)->pluck('id');
-        
+
         $totalReports = ContentReport::where('status', 'pending')
-            ->where(function($q) use ($user, $postIds, $commentIds) {
-                $q->where(function($sq) use ($user) {
+            ->where(function ($q) use ($user, $postIds, $commentIds) {
+                $q->where(function ($sq) use ($user) {
                     $sq->where('content_type', 'user')->where('content_id', $user->id);
-                })->orWhere(function($sq) use ($postIds) {
+                })->orWhere(function ($sq) use ($postIds) {
                     $sq->where('content_type', 'community_post')->whereIn('content_id', $postIds);
-                })->orWhere(function($sq) use ($commentIds) {
+                })->orWhere(function ($sq) use ($commentIds) {
                     $sq->where('content_type', 'community_comment')->whereIn('content_id', $commentIds);
                 });
                 // Could expand to events/jobs but focusing on community for now as requested
@@ -273,7 +287,7 @@ class CommunityController extends Controller
 
             $user->update([
                 'suspended_until' => now()->addMinutes($duration),
-                'warning_count' => $warnings + 1
+                'warning_count' => $warnings + 1,
             ]);
 
             AuditLog::log(
@@ -293,11 +307,13 @@ class CommunityController extends Controller
         if ($community->followers()->where('user_id', $user->id)->exists()) {
             $community->followers()->detach($user->id);
             $community->decrement('member_count');
+
             return back()->with('info', 'Unfollowed community.');
         } else {
             $community->followers()->syncWithoutDetaching([$user->id]);
             $community->increment('member_count');
             $user->awardXp(10, 'joined_group', "Joined group: {$community->name}", $community);
+
             return back()->with('success', 'You have joined this group!');
         }
     }

@@ -2,10 +2,10 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
-use App\Models\User;
 
 class NewContentNotification extends Notification implements ShouldQueue
 {

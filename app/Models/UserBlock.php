@@ -10,7 +10,7 @@ class UserBlock extends Model
     protected $fillable = [
         'user_id',
         'blocked_user_id',
-        'reason'
+        'reason',
     ];
 
     public function user(): BelongsTo

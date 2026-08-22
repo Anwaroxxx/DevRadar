@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Carbon;
+use Inertia\Inertia;
 
 class LeaderboardController extends Controller
 {
@@ -24,38 +24,42 @@ class LeaderboardController extends Controller
         }
 
         if ($tab === 'events') {
-            $query->withCount(['events' => function($q) use ($dateFilter) {
+            $query->withCount(['events' => function ($q) use ($dateFilter) {
                 $q->where('is_approved', true);
                 if ($dateFilter) {
                     $q->where('created_at', '>=', $dateFilter);
                 }
             }])
-            ->orderByDesc('events_count');
+                ->orderByDesc('events_count');
         } elseif ($tab === 'clusters') {
-            $query->withCount(['communities' => function($q) use ($dateFilter) {
+            $query->withCount(['communities' => function ($q) use ($dateFilter) {
                 if ($dateFilter) {
                     $q->where('created_at', '>=', $dateFilter);
                 }
             }])
-            ->orderByDesc('communities_count');
+                ->orderByDesc('communities_count');
         } else {
             // Default to XP
             $query->orderByDesc('xp');
             // XP doesn't easily filter by date unless we sum ActivityLogs.
             // For true weekly/monthly XP, we sum recent ActivityLog xp_changes.
             if ($dateFilter) {
-                $query->withSum(['activityLogs as recent_xp' => function($q) use ($dateFilter) {
+                $query->withSum(['activityLogs as recent_xp' => function ($q) use ($dateFilter) {
                     $q->where('created_at', '>=', $dateFilter);
                 }], 'xp_change')
-                ->orderByDesc('recent_xp');
+                    ->orderByDesc('recent_xp');
             }
         }
 
-        $leaders = $query->take(50)->get()->map(function($user, $idx) use ($tab, $dateFilter) {
+        $leaders = $query->take(50)->get()->map(function ($user, $idx) use ($tab, $dateFilter) {
             $score = 0;
-            if ($tab === 'events') $score = $user->events_count;
-            elseif ($tab === 'clusters') $score = $user->communities_count;
-            else $score = $dateFilter ? ($user->recent_xp ?? 0) : $user->xp;
+            if ($tab === 'events') {
+                $score = $user->events_count;
+            } elseif ($tab === 'clusters') {
+                $score = $user->communities_count;
+            } else {
+                $score = $dateFilter ? ($user->recent_xp ?? 0) : $user->xp;
+            }
 
             return [
                 'id' => $user->id,

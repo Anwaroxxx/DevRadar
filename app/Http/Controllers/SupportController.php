@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\SupportTicket;
+use App\Models\User;
+use App\Notifications\AdminActionRequired;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class SupportController extends Controller
@@ -14,26 +17,26 @@ class SupportController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'email'   => 'required|email|max:255',
-            'type'    => 'required|string|max:100',
+            'email' => 'required|email|max:255',
+            'type' => 'required|string|max:100',
             'message' => 'required|string|min:20|max:2000',
         ]);
 
         $ticket = SupportTicket::create([
             'user_id' => auth()->id(), // null if guest
-            'email'   => $validated['email'],
-            'type'    => $validated['type'],
+            'email' => $validated['email'],
+            'type' => $validated['type'],
             'message' => $validated['message'],
-            'status'  => 'open',
+            'status' => 'open',
         ]);
 
-        $admins = \App\Models\User::where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         if ($admins->isNotEmpty()) {
-            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+            Notification::send($admins, new AdminActionRequired(
                 'Support Ticket',
                 "New Ticket ({$validated['type']})",
                 "A new support ticket was submitted by {$validated['email']}.",
-                "/admin/support"
+                '/admin/support'
             ));
         }
 
@@ -57,8 +60,8 @@ class SupportController extends Controller
         return Inertia::render('Admin/SupportTickets', [
             'tickets' => $query->paginate(20)->withQueryString(),
             'filters' => $request->only(['status', 'type']),
-            'counts'  => [
-                'open'     => SupportTicket::where('status', 'open')->count(),
+            'counts' => [
+                'open' => SupportTicket::where('status', 'open')->count(),
                 'resolved' => SupportTicket::where('status', 'resolved')->count(),
             ],
         ]);
@@ -74,7 +77,7 @@ class SupportController extends Controller
         ]);
 
         $ticket->update([
-            'status'      => 'resolved',
+            'status' => 'resolved',
             'admin_notes' => $validated['admin_notes'] ?? null,
             'resolved_by' => auth()->id(),
             'resolved_at' => now(),

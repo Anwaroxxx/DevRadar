@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\Message;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -48,18 +48,18 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user ? array_merge($user->toArray(), [
-                    'email'           => $user->email, // Explicitly exposed for the self-node
-                    'role'            => $user->role,  // Explicitly exposed for the self-node
-                    'is_admin'        => $user->isAdmin(),
-                    'has_ai_access'   => $user->has_ai_access,
+                    'email' => $user->email, // Explicitly exposed for the self-node
+                    'role' => $user->role,  // Explicitly exposed for the self-node
+                    'is_admin' => $user->isAdmin(),
+                    'has_ai_access' => $user->has_ai_access,
                     'unread_dm_count' => $unreadDmCount,
-                    'notifications'   => $notifications,
+                    'notifications' => $notifications,
                 ]) : null,
             ],
             'flash' => [
-                'success'      => $request->session()->get('success'),
-                'error'        => $request->session()->get('error'),
-                'info'         => $request->session()->get('info'),
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'info' => $request->session()->get('info'),
                 'user_message' => $request->session()->get('user_message'),
             ],
             'csrf_token' => csrf_token(),

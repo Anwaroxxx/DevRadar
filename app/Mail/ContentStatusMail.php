@@ -36,4 +36,3 @@ class ContentStatusMail extends Mailable implements ShouldQueue
         );
     }
 }
-

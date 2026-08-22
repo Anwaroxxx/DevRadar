@@ -13,19 +13,19 @@ return new class extends Migration
     {
         // Events approval
         Schema::table('events', function (Blueprint $table) {
-            if (!Schema::hasColumn('events', 'approval_status')) {
+            if (! Schema::hasColumn('events', 'approval_status')) {
                 $col = $table->string('approval_status')->default('pending'); // pending, approved, rejected
                 if (Schema::hasColumn('events', 'is_approved')) {
                     $col->after('is_approved');
                 }
             }
-            if (!Schema::hasColumn('events', 'approved_by')) {
+            if (! Schema::hasColumn('events', 'approved_by')) {
                 $col = $table->unsignedBigInteger('approved_by')->nullable();
                 if (Schema::hasColumn('events', 'approval_status')) {
                     $col->after('approval_status');
                 }
             }
-            if (!Schema::hasColumn('events', 'rejection_reason')) {
+            if (! Schema::hasColumn('events', 'rejection_reason')) {
                 $col = $table->text('rejection_reason')->nullable();
                 if (Schema::hasColumn('events', 'approved_by')) {
                     $col->after('approved_by');
@@ -35,25 +35,25 @@ return new class extends Migration
 
         // Jobs approval
         Schema::table('job_listings', function (Blueprint $table) {
-            if (!Schema::hasColumn('job_listings', 'approval_status')) {
+            if (! Schema::hasColumn('job_listings', 'approval_status')) {
                 $col = $table->string('approval_status')->default('pending'); // pending, approved, rejected
                 if (Schema::hasColumn('job_listings', 'is_active')) {
                     $col->after('is_active');
                 }
             }
-            if (!Schema::hasColumn('job_listings', 'approved_by')) {
+            if (! Schema::hasColumn('job_listings', 'approved_by')) {
                 $col = $table->unsignedBigInteger('approved_by')->nullable();
                 if (Schema::hasColumn('job_listings', 'approval_status')) {
                     $col->after('approval_status');
                 }
             }
-            if (!Schema::hasColumn('job_listings', 'rejection_reason')) {
+            if (! Schema::hasColumn('job_listings', 'rejection_reason')) {
                 $col = $table->text('rejection_reason')->nullable();
                 if (Schema::hasColumn('job_listings', 'approved_by')) {
                     $col->after('approved_by');
                 }
             }
-            if (!Schema::hasColumn('job_listings', 'is_verified_company')) {
+            if (! Schema::hasColumn('job_listings', 'is_verified_company')) {
                 $col = $table->boolean('is_verified_company')->default(false);
                 if (Schema::hasColumn('job_listings', 'rejection_reason')) {
                     $col->after('rejection_reason');
@@ -65,7 +65,7 @@ return new class extends Migration
 
         // Communities approval
         Schema::table('communities', function (Blueprint $table) {
-            if (!Schema::hasColumn('communities', 'approval_status')) {
+            if (! Schema::hasColumn('communities', 'approval_status')) {
                 $col = $table->string('approval_status')->default('approved'); // pending, approved, rejected
                 if (Schema::hasColumn('communities', 'id')) {
                     $col->after('id');

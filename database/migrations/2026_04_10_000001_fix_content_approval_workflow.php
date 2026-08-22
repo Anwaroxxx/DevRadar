@@ -11,19 +11,19 @@ return new class extends Migration
     {
         // Ensure approval_status exists everywhere and defaults are sensible.
 
-        if (!Schema::hasColumn('events', 'approval_status')) {
+        if (! Schema::hasColumn('events', 'approval_status')) {
             Schema::table('events', function (Blueprint $table) {
                 $table->string('approval_status')->default('pending');
             });
         }
 
-        if (!Schema::hasColumn('job_listings', 'approval_status')) {
+        if (! Schema::hasColumn('job_listings', 'approval_status')) {
             Schema::table('job_listings', function (Blueprint $table) {
                 $table->string('approval_status')->default('pending');
             });
         }
 
-        if (!Schema::hasColumn('communities', 'approval_status')) {
+        if (! Schema::hasColumn('communities', 'approval_status')) {
             Schema::table('communities', function (Blueprint $table) {
                 $table->string('approval_status')->default('pending');
             });
@@ -62,4 +62,3 @@ return new class extends Migration
         // Non-destructive rollback: do not drop columns (could contain production data).
     }
 };
-

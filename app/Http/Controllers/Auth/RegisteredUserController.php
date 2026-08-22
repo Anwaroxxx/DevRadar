@@ -19,15 +19,15 @@ class RegisteredUserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
         ]);
 
-        $username = strtolower(str_replace(' ', '_', $data['name'])) . '_' . rand(100,999);
+        $username = strtolower(str_replace(' ', '_', $data['name'])).'_'.rand(100, 999);
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'username' => $username,
         ]);
@@ -35,6 +35,7 @@ class RegisteredUserController extends Controller
         $user->awardXp(0, 'registered', 'Welcome to DevRadar Morocco!');
 
         Auth::login($user);
+
         return redirect()->route('dashboard');
     }
 }

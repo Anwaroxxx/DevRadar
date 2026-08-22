@@ -41,7 +41,7 @@ class AchievementSeeder extends Seeder
             // Content / Platform
             ['name' => 'Vigilante', 'slug' => 'report-content', 'description' => 'Submit a content report.', 'icon' => 'shield-alert', 'xp_reward' => 10, 'trigger_type' => 'count_based', 'metric_key' => 'reports_submitted', 'trigger_value' => 1],
             ['name' => 'Market Buyer', 'slug' => 'first-purchase', 'description' => 'Buy an item from the Marketplace.', 'icon' => 'shopping-cart', 'xp_reward' => 50, 'trigger_type' => 'count_based', 'metric_key' => 'purchases', 'trigger_value' => 1],
-            
+
             // Xp milestone
             ['name' => 'Rising Star', 'slug' => '1000-xp', 'description' => 'Accumulate 1,000 XP.', 'icon' => 'trending-up', 'xp_reward' => 0, 'trigger_type' => 'milestone', 'metric_key' => 'xp', 'trigger_value' => 1000],
             ['name' => 'Hacker Elite', 'slug' => '10000-xp', 'description' => 'Accumulate 10,000 XP.', 'icon' => 'crown', 'xp_reward' => 0, 'trigger_type' => 'milestone', 'metric_key' => 'xp', 'trigger_value' => 10000],

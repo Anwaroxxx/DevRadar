@@ -6,6 +6,7 @@ export function useClipboard() {
     const copy = async (text) => {
         if (!navigator?.clipboard) {
             console.warn('Clipboard not supported');
+
             return false;
         }
 
@@ -21,6 +22,7 @@ export function useClipboard() {
         } catch (error) {
             console.warn('Copy failed', error);
             setCopiedText(null);
+
             return false;
         }
     };

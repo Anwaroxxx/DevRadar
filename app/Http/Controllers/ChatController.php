@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageSent;
+use App\Events\UserTyping;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Events\UserTyping;
+use Inertia\Inertia;
 
 class ChatController extends Controller
 {
@@ -23,13 +24,13 @@ class ChatController extends Controller
     {
         $currentUserId = Auth::id();
 
-        $messages = Message::where(function($q) use ($currentUserId, $user) {
-                $q->where('sender_id', $currentUserId)
-                  ->where('receiver_id', $user->id);
-            })
-            ->orWhere(function($q) use ($currentUserId, $user) {
+        $messages = Message::where(function ($q) use ($currentUserId, $user) {
+            $q->where('sender_id', $currentUserId)
+                ->where('receiver_id', $user->id);
+        })
+            ->orWhere(function ($q) use ($currentUserId, $user) {
                 $q->where('sender_id', $user->id)
-                  ->where('receiver_id', $currentUserId);
+                    ->where('receiver_id', $currentUserId);
             })
             ->orderBy('created_at', 'asc')
             ->get();
@@ -46,7 +47,7 @@ class ChatController extends Controller
                 'chatUsers' => $this->getChatUsers(),
                 'selectedUser' => $user->only(['id', 'name', 'username', 'avatar']),
                 'messages' => [],
-                'isRestricted' => true
+                'isRestricted' => true,
             ]);
         }
 
@@ -54,7 +55,7 @@ class ChatController extends Controller
             'chatUsers' => $this->getChatUsers(),
             'selectedUser' => $user->only(['id', 'name', 'username', 'avatar']),
             'messages' => $messages,
-            'isRestricted' => false
+            'isRestricted' => false,
         ]);
     }
 
@@ -104,7 +105,7 @@ class ChatController extends Controller
 
         $message->load('sender');
 
-        broadcast(new \App\Events\MessageSent($message))->toOthers();
+        broadcast(new MessageSent($message))->toOthers();
 
         Auth::user()?->checkBadges();
 
@@ -114,31 +115,33 @@ class ChatController extends Controller
     public function typing(Request $request, User $user)
     {
         $request->validate(['is_typing' => 'required|boolean']);
-        
+
         broadcast(new UserTyping(Auth::id(), $user->id, $request->is_typing))->toOthers();
-        
+
         return response()->json(['status' => 'transmitted']);
     }
 
     public function search(Request $request)
     {
         $query = $request->input('query');
-        
-        if (!$query) return response()->json([]);
+
+        if (! $query) {
+            return response()->json([]);
+        }
 
         $currentUser = Auth::user();
         $blockedByMe = $currentUser->blockedUsers()->pluck('blocked_user_id')->toArray();
         $blockingMe = $currentUser->blockedByUsers()->pluck('user_id')->toArray();
         $restrictedIds = array_unique(array_merge($blockedByMe, $blockingMe));
 
-        $users = User::where(function($q) use ($query) {
+        $users = User::where(function ($q) use ($query) {
             $q->where('name', 'LIKE', "%{$query}%")
-              ->orWhere('username', 'LIKE', "%{$query}%");
+                ->orWhere('username', 'LIKE', "%{$query}%");
         })
-        ->where('id', '!=', Auth::id())
-        ->whereNotIn('id', $restrictedIds)
-        ->limit(5)
-        ->get(['id', 'name', 'username', 'avatar']);
+            ->where('id', '!=', Auth::id())
+            ->whereNotIn('id', $restrictedIds)
+            ->limit(5)
+            ->get(['id', 'name', 'username', 'avatar']);
 
         return response()->json($users);
     }
@@ -152,7 +155,7 @@ class ChatController extends Controller
         $blockingMe = $currentUser->blockedByUsers()->pluck('user_id')->toArray();
         $restrictedIds = array_unique(array_merge($blockedByMe, $blockingMe));
 
-        $chatUsers = User::whereIn('id', function($query) use ($userId) {
+        $chatUsers = User::whereIn('id', function ($query) use ($userId) {
             $query->select('receiver_id')
                 ->from('messages')
                 ->where('sender_id', $userId)
@@ -163,46 +166,46 @@ class ChatController extends Controller
                         ->where('receiver_id', $userId)
                 );
         })
-        ->where('id', '!=', $userId)
-        ->whereNotIn('id', $restrictedIds)
-        ->select(['id', 'name', 'username', 'avatar'])
-        ->selectSub(
-            Message::select('content')
-                ->where(function ($q) use ($userId) {
-                    $q->whereColumn('sender_id', 'users.id')
-                        ->where('receiver_id', $userId);
-                })
-                ->orWhere(function ($q) use ($userId) {
-                    $q->where('sender_id', $userId)
-                        ->whereColumn('receiver_id', 'users.id');
-                })
-                ->latest('created_at')
-                ->limit(1),
-            'last_message'
-        )
-        ->selectSub(
-            Message::select('created_at')
-                ->where(function ($q) use ($userId) {
-                    $q->whereColumn('sender_id', 'users.id')
-                        ->where('receiver_id', $userId);
-                })
-                ->orWhere(function ($q) use ($userId) {
-                    $q->where('sender_id', $userId)
-                        ->whereColumn('receiver_id', 'users.id');
-                })
-                ->latest('created_at')
-                ->limit(1),
-            'last_message_time'
-        )
-        ->selectSub(
-            Message::selectRaw('COUNT(*)')
-                ->whereColumn('sender_id', 'users.id')
-                ->where('receiver_id', $userId)
-                ->whereNull('read_at'),
-            'unread_count'
-        )
-        ->orderByDesc('last_message_time')
-        ->get();
+            ->where('id', '!=', $userId)
+            ->whereNotIn('id', $restrictedIds)
+            ->select(['id', 'name', 'username', 'avatar'])
+            ->selectSub(
+                Message::select('content')
+                    ->where(function ($q) use ($userId) {
+                        $q->whereColumn('sender_id', 'users.id')
+                            ->where('receiver_id', $userId);
+                    })
+                    ->orWhere(function ($q) use ($userId) {
+                        $q->where('sender_id', $userId)
+                            ->whereColumn('receiver_id', 'users.id');
+                    })
+                    ->latest('created_at')
+                    ->limit(1),
+                'last_message'
+            )
+            ->selectSub(
+                Message::select('created_at')
+                    ->where(function ($q) use ($userId) {
+                        $q->whereColumn('sender_id', 'users.id')
+                            ->where('receiver_id', $userId);
+                    })
+                    ->orWhere(function ($q) use ($userId) {
+                        $q->where('sender_id', $userId)
+                            ->whereColumn('receiver_id', 'users.id');
+                    })
+                    ->latest('created_at')
+                    ->limit(1),
+                'last_message_time'
+            )
+            ->selectSub(
+                Message::selectRaw('COUNT(*)')
+                    ->whereColumn('sender_id', 'users.id')
+                    ->where('receiver_id', $userId)
+                    ->whereNull('read_at'),
+                'unread_count'
+            )
+            ->orderByDesc('last_message_time')
+            ->get();
 
         return $chatUsers->map(function ($u) {
             return [

@@ -3,14 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Event;
-use App\Models\JobListing;
 use App\Models\Community;
 use App\Models\CommunitySnapshot;
+use App\Models\Event;
+use App\Models\JobListing;
 use App\Models\MarketplaceItem;
-use App\Models\XpReward;
-use App\Models\AiUsageLog;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -22,7 +19,7 @@ class ContentController extends Controller
 
         if ($request->search) {
             $query->where('title', 'LIKE', "%{$request->search}%")
-                  ->orWhere('city', 'LIKE', "%{$request->search}%");
+                ->orWhere('city', 'LIKE', "%{$request->search}%");
         }
 
         if ($request->status) {
@@ -36,7 +33,7 @@ class ContentController extends Controller
         $events = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/Events', [
-            'events'  => $events,
+            'events' => $events,
             'filters' => $request->only(['search', 'status', 'category']),
         ]);
     }
@@ -48,7 +45,7 @@ class ContentController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('title', 'LIKE', "%{$request->search}%")
-                  ->orWhere('company', 'LIKE', "%{$request->search}%");
+                    ->orWhere('company', 'LIKE', "%{$request->search}%");
             });
         }
 
@@ -59,7 +56,7 @@ class ContentController extends Controller
         $jobs = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/Jobs', [
-            'jobs'    => $jobs,
+            'jobs' => $jobs,
             'filters' => $request->only(['search', 'status']),
         ]);
     }
@@ -83,12 +80,13 @@ class ContentController extends Controller
         // Transform to include comment counts per community (sum of comments on all posts)
         $communities->getCollection()->transform(function ($community) {
             $community->comments_count = $community->posts()->withCount('comments')->get()->sum('comments_count');
+
             return $community;
         });
 
         return Inertia::render('Admin/Communities', [
             'communities' => $communities,
-            'filters'     => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 
@@ -106,7 +104,7 @@ class ContentController extends Controller
             'followers_count' => $followers_count,
             'posts_count' => $posts_count,
             'comments_count' => $comments_count,
-            'engagement_signal' => $signal
+            'engagement_signal' => $signal,
         ]);
 
         return back()->with('success', "Intelligence snapshot captured for node: {$community->name}");
@@ -115,7 +113,7 @@ class ContentController extends Controller
     public function getStats(Community $community)
     {
         return response()->json([
-            'snapshots' => $community->snapshots()->orderBy('created_at', 'desc')->limit(10)->get()
+            'snapshots' => $community->snapshots()->orderBy('created_at', 'desc')->limit(10)->get(),
         ]);
     }
 
@@ -131,7 +129,8 @@ class ContentController extends Controller
 
         if ($content) {
             $content->delete();
-            return back()->with('success', ucfirst($type) . ' deleted successfully.');
+
+            return back()->with('success', ucfirst($type).' deleted successfully.');
         }
 
         return back()->with('error', 'Content not found.');

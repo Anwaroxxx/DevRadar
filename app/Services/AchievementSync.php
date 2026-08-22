@@ -11,7 +11,7 @@ class AchievementSync
     public static function sync(User $user): void
     {
         $user = $user->fresh();
-        if (!$user) {
+        if (! $user) {
             return;
         }
 

@@ -8,6 +8,7 @@ export function useCurrentUrl() {
         if (startsWith) {
             return url.startsWith(path);
         }
+
         return url === path;
     };
 

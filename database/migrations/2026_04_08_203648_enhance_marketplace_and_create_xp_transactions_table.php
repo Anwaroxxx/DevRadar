@@ -33,7 +33,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('xp_transactions');
-        
+
         Schema::table('marketplace_items', function (Blueprint $table) {
             $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');

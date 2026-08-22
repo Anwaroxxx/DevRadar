@@ -19,6 +19,7 @@ class PlatformMetric extends Model
     public static function record($metric_name, $value, $date = null)
     {
         $date = $date ?? now()->toDateString();
+
         return self::updateOrCreate(
             ['metric_name' => $metric_name, 'date' => $date],
             ['value' => $value]

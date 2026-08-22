@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\MarketplaceItem;
+use Illuminate\Database\Seeder;
 
 class MarketplaceSeeder extends Seeder
 {
@@ -45,7 +45,7 @@ class MarketplaceSeeder extends Seeder
                 'icon' => 'credit-card',
                 'is_available' => true,
                 'is_approved' => true,
-            ]
+            ],
         ];
 
         foreach ($items as $item) {

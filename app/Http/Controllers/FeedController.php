@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Community;
 use App\Models\Event;
 use App\Models\JobListing;
-use App\Models\Community;
 use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class FeedController extends Controller
@@ -19,7 +18,7 @@ class FeedController extends Controller
 
         if (auth()->check()) {
             $user = auth()->user();
-            
+
             // Get all IDs involved in blocking (both ways)
             $blockedByMe = $user->blockedUsers()->pluck('blocked_user_id')->toArray();
             $blockingMe = $user->blockedByUsers()->pluck('user_id')->toArray();
@@ -33,7 +32,7 @@ class FeedController extends Controller
 
             $userRank = [
                 'xp' => $user->xp,
-                'rank' => $rank
+                'rank' => $rank,
             ];
         }
 
@@ -58,19 +57,19 @@ class FeedController extends Controller
             ->get();
 
         $trendingTags = Tag::withCount(['events' => function ($q) use ($blockedUserIds) {
-                $q->whereNotIn('user_id', $blockedUserIds);
-            }])
+            $q->whereNotIn('user_id', $blockedUserIds);
+        }])
             ->orderByDesc('events_count')
             ->limit(10)
             ->get();
 
         return Inertia::render('Feed/Index', [
-            'recentEvents'      => $recentEvents,
-            'recentJobs'        => $recentJobs,
+            'recentEvents' => $recentEvents,
+            'recentJobs' => $recentJobs,
             'recentCommunities' => $recentCommunities,
-            'trendingTags'      => $trendingTags,
-            'activeNodes'       => User::count(),
-            'userRank'          => $userRank,
+            'trendingTags' => $trendingTags,
+            'activeNodes' => User::count(),
+            'userRank' => $userRank,
         ]);
     }
 }

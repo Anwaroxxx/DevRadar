@@ -6,6 +6,9 @@ export function cn(...inputs) {
 }
 
 export function toUrl(url) {
-    if (!url) return '';
+    if (!url) {
+return '';
+}
+
     return typeof url === 'string' ? url : (url.url || '');
 }

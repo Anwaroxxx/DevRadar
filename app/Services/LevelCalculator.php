@@ -10,7 +10,10 @@ class LevelCalculator
      */
     public static function calculateLevel(int $xp): int
     {
-        if ($xp <= 0) return 1;
+        if ($xp <= 0) {
+            return 1;
+        }
+
         return (int) floor(sqrt($xp / 50)) + 1;
     }
 
@@ -19,7 +22,10 @@ class LevelCalculator
      */
     public static function xpForLevel(int $level): int
     {
-        if ($level <= 1) return 0;
+        if ($level <= 1) {
+            return 0;
+        }
+
         return (int) pow($level - 1, 2) * 50;
     }
 
@@ -35,8 +41,10 @@ class LevelCalculator
         $xpInCurrentLevel = $xp - $currentLevelXp;
         $xpNeededForNext = $nextLevelXp - $currentLevelXp;
 
-        if ($xpNeededForNext <= 0) return 100.0;
-        
+        if ($xpNeededForNext <= 0) {
+            return 100.0;
+        }
+
         return round(($xpInCurrentLevel / $xpNeededForNext) * 100, 2);
     }
 
@@ -51,8 +59,8 @@ class LevelCalculator
             $level >= 30 => 'SYSTEM_OPERATOR',
             $level >= 20 => 'POWER_USER',
             $level >= 10 => 'VERIFIED_NODE',
-            $level >= 5  => 'STABLE_SIGNAL',
-            default      => 'INITIAL_PROBE',
+            $level >= 5 => 'STABLE_SIGNAL',
+            default => 'INITIAL_PROBE',
         };
     }
 }

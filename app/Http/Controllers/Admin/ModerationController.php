@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ContentStatusMail;
+use App\Models\AuditLog;
+use App\Models\Community;
+use App\Models\CommunityComment;
+use App\Models\CommunityPost;
+use App\Models\ContentReport;
 use App\Models\Event;
 use App\Models\JobListing;
-use App\Models\Community;
-use App\Models\ContentReport;
-use App\Models\AuditLog;
+use App\Models\Message;
 use App\Models\User;
-use App\Mail\ContentStatusMail;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class ModerationController extends Controller
 {
@@ -57,7 +60,9 @@ class ModerationController extends Controller
             default => null,
         };
 
-        if (!$content) return back()->with('error', 'Node data not found.');
+        if (! $content) {
+            return back()->with('error', 'Node data not found.');
+        }
 
         match ($type) {
             'event' => $content->update(['approval_status' => 'approved', 'approved_by' => auth()->id(), 'is_approved' => true]),
@@ -80,14 +85,14 @@ class ModerationController extends Controller
         }
 
         // Notify user
-        if (!empty($content->user?->email)) {
+        if (! empty($content->user?->email)) {
             $title = $type === 'community' ? $content->name : $content->title;
             Mail::to($content->user->email)->queue(new ContentStatusMail($type, $title, 'approved'));
         }
 
         AuditLog::log(auth()->id(), 'approve_content', $type, $id, ['status' => 'approved'], "Authorized {$type} node #{$id}");
 
-        return back()->with('success', "Approval verified. Content published and rewards distributed.");
+        return back()->with('success', 'Approval verified. Content published and rewards distributed.');
     }
 
     public function reject(Request $request, $type, $id)
@@ -102,7 +107,9 @@ class ModerationController extends Controller
             default => null,
         };
 
-        if (!$content) return back()->with('error', 'Node data not found.');
+        if (! $content) {
+            return back()->with('error', 'Node data not found.');
+        }
 
         match ($type) {
             'event' => $content->update(['approval_status' => 'rejected', 'approved_by' => auth()->id(), 'is_approved' => false, 'rejection_reason' => $reason]),
@@ -110,14 +117,14 @@ class ModerationController extends Controller
             'community' => $content->update(['approval_status' => 'rejected', 'approved_by' => auth()->id(), 'rejection_reason' => $reason]),
         };
 
-        if (!empty($content->user?->email)) {
+        if (! empty($content->user?->email)) {
             $title = $type === 'community' ? $content->name : $content->title;
             Mail::to($content->user->email)->queue(new ContentStatusMail($type, $title, 'rejected', $reason));
         }
 
         AuditLog::log(auth()->id(), 'reject_content', $type, $id, ['reason' => $reason], "Rejected {$type} node #{$id}");
 
-        return back()->with('success', "Signal suppressed. Content rejected.");
+        return back()->with('success', 'Signal suppressed. Content rejected.');
     }
 
     public function resolveReport(Request $request, ContentReport $report)
@@ -148,9 +155,9 @@ class ModerationController extends Controller
             $content = match ($report->content_type) {
                 'event' => Event::find($report->content_id),
                 'job' => JobListing::find($report->content_id),
-                'message' => \App\Models\Message::find($report->content_id),
-                'community_post' => \App\Models\CommunityPost::find($report->content_id),
-                'community_comment' => \App\Models\CommunityComment::find($report->content_id),
+                'message' => Message::find($report->content_id),
+                'community_post' => CommunityPost::find($report->content_id),
+                'community_comment' => CommunityComment::find($report->content_id),
                 default => null,
             };
             $content?->delete();
@@ -158,6 +165,6 @@ class ModerationController extends Controller
 
         AuditLog::log(auth()->id(), 'resolve_report', 'report', $report->id, ['action' => $validated['action']], "Resolved report #{$report->id} with action: {$validated['action']}");
 
-        return back()->with('success', "Threat mitigated. Report resolved.");
+        return back()->with('success', 'Threat mitigated. Report resolved.');
     }
 }

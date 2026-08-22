@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
-use App\Models\JobListing;
 use App\Models\Community;
-use Illuminate\Http\Request;
+use App\Models\Event;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -44,17 +42,17 @@ class HomeController extends Controller
             ->get();
 
         return Inertia::render('Home', [
-            'stats'            => $stats,
-            'myEvents'         => $myEvents,
-            'myCommunities'    => $myCommunities,
+            'stats' => $stats,
+            'myEvents' => $myEvents,
+            'myCommunities' => $myCommunities,
             'radarCommunities' => $radarCommunities,
             // Keeping mapEvents strictly for the background live-map visual if needed
-            'mapEvents'        => Event::where('is_approved', true)
-                                ->whereNotNull('latitude')
-                                ->whereNotNull('longitude')
-                                ->inRandomOrder()
-                                ->limit(5)
-                                ->get(['id','latitude','longitude', 'title']),
+            'mapEvents' => Event::where('is_approved', true)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->inRandomOrder()
+                ->limit(5)
+                ->get(['id', 'latitude', 'longitude', 'title']),
         ]);
     }
 }

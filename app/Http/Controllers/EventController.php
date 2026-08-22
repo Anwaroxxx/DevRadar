@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Mail\ContentStatusMail;
 use App\Models\Event;
 use App\Models\Tag;
+use App\Models\User;
+use App\Notifications\AdminActionRequired;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Inertia\Inertia;
 
 class EventController extends Controller
 {
@@ -21,7 +24,7 @@ class EventController extends Controller
             $query->where('city', $request->city);
         }
         if ($request->tag) {
-            $query->whereHas('tags', fn($q) => $q->where('name', $request->tag));
+            $query->whereHas('tags', fn ($q) => $q->where('name', $request->tag));
         }
         if ($request->category) {
             $query->where('category', $request->category);
@@ -32,7 +35,7 @@ class EventController extends Controller
         return Inertia::render('Events/Index', [
             'events' => $events,
             'filters' => $request->only(['city', 'tag', 'category']),
-            'tags'   => Tag::all(),
+            'tags' => Tag::all(),
         ]);
     }
 
@@ -47,27 +50,28 @@ class EventController extends Controller
         $viewer = auth()->user();
         $isAdmin = $viewer?->role === 'admin';
         $isOwner = $viewer?->id === $event->user_id;
-        if ($event->approval_status !== 'approved' && !$isAdmin && !$isOwner) {
+        if ($event->approval_status !== 'approved' && ! $isAdmin && ! $isOwner) {
             abort(404);
         }
 
         $event->load(['user', 'tags', 'attendees']);
+
         return Inertia::render('Events/Show', ['event' => $event]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'city'        => 'required|string',
-            'organizer'   => 'required|string',
-            'website'     => 'nullable|url',
-            'event_date'  => 'required|date',
-            'category'    => 'required|string',
-            'latitude'    => 'nullable|numeric',
-            'longitude'   => 'nullable|numeric',
-            'tags'        => 'nullable|array',
+            'city' => 'required|string',
+            'organizer' => 'required|string',
+            'website' => 'nullable|url',
+            'event_date' => 'required|date',
+            'category' => 'required|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'tags' => 'nullable|array',
         ]);
 
         $event = $request->user()->events()->create(array_merge($data, [
@@ -75,26 +79,26 @@ class EventController extends Controller
             'is_approved' => $request->user()->role === 'admin',
         ]));
 
-        if (!empty($data['tags'])) {
+        if (! empty($data['tags'])) {
             $tagIds = collect($data['tags'])->map(function ($name) {
                 return Tag::firstOrCreate(['name' => $name], ['color' => '#00d4ff'])->id;
             });
             $event->tags()->sync($tagIds);
         }
 
-        if (!empty($request->user()->email)) {
+        if (! empty($request->user()->email)) {
             Mail::to($request->user()->email)->queue(
                 new ContentStatusMail('event', $event->title, 'pending')
             );
         }
 
-        $admins = \App\Models\User::where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         if ($admins->isNotEmpty()) {
-            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\AdminActionRequired(
+            Notification::send($admins, new AdminActionRequired(
                 'Event',
                 $event->title,
                 "A new event '{$event->title}' was proposed by {$request->user()->username}.",
-                "/admin/events"
+                '/admin/events'
             ));
         }
 
@@ -104,8 +108,9 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $this->authorize('update', $event);
+
         return Inertia::render('Events/Edit', [
-            'event' => $event->load('tags')
+            'event' => $event->load('tags'),
         ]);
     }
 
@@ -113,18 +118,19 @@ class EventController extends Controller
     {
         $this->authorize('update', $event);
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'city'        => 'required|string',
-            'organizer'   => 'required|string',
-            'website'     => 'nullable|url',
-            'event_date'  => 'required|date',
-            'category'    => 'required|string',
-            'latitude'    => 'nullable|numeric',
-            'longitude'   => 'nullable|numeric',
+            'city' => 'required|string',
+            'organizer' => 'required|string',
+            'website' => 'nullable|url',
+            'event_date' => 'required|date',
+            'category' => 'required|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $event->update($data);
+
         return redirect()->route('events.show', $event)->with('success', 'Post updated successfully.');
     }
 
@@ -132,6 +138,7 @@ class EventController extends Controller
     {
         $this->authorize('delete', $event);
         $event->delete();
+
         return redirect()->route('events.index')->with('success', 'Post deleted successfully.');
     }
 
@@ -142,12 +149,14 @@ class EventController extends Controller
 
         if ($pivot && $pivot->pivot->saved) {
             $user->savedEvents()->updateExistingPivot($event->id, ['saved' => false]);
+
             return back()->with('info', 'Event unsaved.');
         } else {
             $user->savedEvents()->syncWithoutDetaching([
-                $event->id => ['saved' => true]
+                $event->id => ['saved' => true],
             ]);
             $user->awardXp(10, 'saved_event', "Saved event: {$event->title}", $event);
+
             return back()->with('success', '+10 XP earned for saving event!');
         }
     }
@@ -162,10 +171,11 @@ class EventController extends Controller
             $event->decrement('attendees_count');
         } else {
             $user->savedEvents()->syncWithoutDetaching([
-                $event->id => ['attending' => true]
+                $event->id => ['attending' => true],
             ]);
             $event->increment('attendees_count');
         }
+
         return back();
     }
 
@@ -175,7 +185,8 @@ class EventController extends Controller
             ->where('approval_status', 'approved')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->get(['id','title','city','category','latitude','longitude','event_date']);
+            ->get(['id', 'title', 'city', 'category', 'latitude', 'longitude', 'event_date']);
+
         return response()->json($events);
     }
 }

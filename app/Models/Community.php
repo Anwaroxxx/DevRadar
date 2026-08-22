@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Community extends Model
 {
@@ -15,16 +15,23 @@ class Community extends Model
         'approval_status', 'approved_by', 'rejection_reason',
     ];
 
-    public function user() { return $this->belongsTo(User::class)->withTrashed(); }
-    public function followers() {
+    public function user()
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function followers()
+    {
         return $this->belongsToMany(User::class, 'community_user')->withTimestamps();
     }
 
-    public function posts() {
+    public function posts()
+    {
         return $this->hasMany(CommunityPost::class);
     }
 
-    public function snapshots() {
+    public function snapshots()
+    {
         return $this->hasMany(CommunitySnapshot::class);
     }
 }

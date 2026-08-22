@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('communities', function (Blueprint $table) {
-            if (!Schema::hasColumn('communities', 'approved_by')) {
+            if (! Schema::hasColumn('communities', 'approved_by')) {
                 $table->unsignedBigInteger('approved_by')->nullable();
             }
-            if (!Schema::hasColumn('communities', 'rejection_reason')) {
+            if (! Schema::hasColumn('communities', 'rejection_reason')) {
                 $table->text('rejection_reason')->nullable();
             }
         });
@@ -25,4 +25,3 @@ return new class extends Migration
         });
     }
 };
-

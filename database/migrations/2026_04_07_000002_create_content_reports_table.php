@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('admin_notes')->nullable();
             $table->string('action_taken')->nullable(); // 'deleted', 'hidden', 'warned_user', 'suspended_user', 'banned_user'
             $table->timestamps();
-            
+
             $table->index(['content_type', 'content_id']);
             $table->index('status');
         });

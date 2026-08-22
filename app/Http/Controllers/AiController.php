@@ -9,6 +9,7 @@ use Inertia\Inertia;
 class AiController extends Controller
 {
     private string $apiKey;
+
     private string $model = 'llama-3.3-70b-versatile';
 
     public function __construct()
@@ -18,10 +19,25 @@ class AiController extends Controller
 
     // ───────── Pages ─────────
 
-    public function chatPage()   { return Inertia::render('Ai/Chat'); }
-    public function codePage()   { return Inertia::render('Ai/Code'); }
-    public function resumePage() { return Inertia::render('Ai/Resume'); }
-    public function postPage()   { return Inertia::render('Ai/PostGenerator'); }
+    public function chatPage()
+    {
+        return Inertia::render('Ai/Chat');
+    }
+
+    public function codePage()
+    {
+        return Inertia::render('Ai/Code');
+    }
+
+    public function resumePage()
+    {
+        return Inertia::render('Ai/Resume');
+    }
+
+    public function postPage()
+    {
+        return Inertia::render('Ai/PostGenerator');
+    }
 
     // ───────── AI actions ─────────
 
@@ -53,17 +69,17 @@ class AiController extends Controller
     public function buildResume(Request $request)
     {
         $request->validate([
-            'name'        => 'required|string',
+            'name' => 'required|string',
             'target_role' => 'required|string',
-            'skills'      => 'nullable|string',
-            'experience'  => 'nullable|string',
-            'education'   => 'nullable|string',
-            'type'        => 'required|in:cv,linkedin,portfolio',
+            'skills' => 'nullable|string',
+            'experience' => 'nullable|string',
+            'education' => 'nullable|string',
+            'type' => 'required|in:cv,linkedin,portfolio',
         ]);
 
         $prompt = match ($request->type) {
-            'cv'        => "Generate a professional developer CV for {$request->name} targeting a {$request->target_role} role.\nSkills: {$request->skills}\nExperience: {$request->experience}\nEducation: {$request->education}\nFormat as a clean, professional CV with sections.",
-            'linkedin'  => "Write a compelling LinkedIn summary/About section for a developer named {$request->name} targeting {$request->target_role}.\nSkills: {$request->skills}\nExperience: {$request->experience}\nMake it engaging, professional, and personal.",
+            'cv' => "Generate a professional developer CV for {$request->name} targeting a {$request->target_role} role.\nSkills: {$request->skills}\nExperience: {$request->experience}\nEducation: {$request->education}\nFormat as a clean, professional CV with sections.",
+            'linkedin' => "Write a compelling LinkedIn summary/About section for a developer named {$request->name} targeting {$request->target_role}.\nSkills: {$request->skills}\nExperience: {$request->experience}\nMake it engaging, professional, and personal.",
             'portfolio' => "Write a portfolio bio/introduction for developer {$request->name} targeting {$request->target_role}.\nSkills: {$request->skills}\nExperience: {$request->experience}\nMake it stand out.",
         };
 
@@ -78,8 +94,8 @@ class AiController extends Controller
     public function generatePost(Request $request)
     {
         $request->validate([
-            'topic'   => 'required|string',
-            'type'    => 'required|in:event,announcement,community',
+            'topic' => 'required|string',
+            'type' => 'required|in:event,announcement,community',
             'details' => 'nullable|string',
         ]);
 
@@ -107,23 +123,24 @@ class AiController extends Controller
 
     private function askGroq(array $messages): string
     {
-        if (!$this->apiKey) {
+        if (! $this->apiKey) {
             return 'AI service not configured. Please set the GROQ_API_KEY in your .env file.';
         }
 
         try {
             $response = Http::timeout(30)->withHeaders([
                 'Authorization' => "Bearer {$this->apiKey}",
-                'Content-Type'  => 'application/json',
+                'Content-Type' => 'application/json',
             ])->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'       => $this->model,
-                'messages'    => $messages,
-                'max_tokens'  => 2048,
+                'model' => $this->model,
+                'messages' => $messages,
+                'max_tokens' => 2048,
                 'temperature' => 0.7,
             ]);
 
             if ($response->failed()) {
                 $error = $response->json('error.message', 'Unknown error');
+
                 return "AI service error: {$error}";
             }
 

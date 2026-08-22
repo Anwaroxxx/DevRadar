@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Badge;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Achievement;
 use App\Models\AuditLog;
+use App\Models\Badge;
+use App\Models\ContentReport;
+use App\Models\Skill;
+use App\Models\User;
+use App\Notifications\NewFollower;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
+use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
@@ -40,7 +46,7 @@ class ProfileController extends Controller
         $user->loadCount(['followers', 'following']);
 
         // Load new Achievement system catalog
-        $achievements = \App\Models\Achievement::all()->map(function ($a) use ($user) {
+        $achievements = Achievement::all()->map(function ($a) use ($user) {
             return [
                 'id' => $a->id,
                 'slug' => $a->slug,
@@ -85,13 +91,13 @@ class ProfileController extends Controller
             'description' => 'required|string',
         ]);
 
-        \App\Models\ContentReport::create([
+        ContentReport::create([
             'user_id' => $request->user()->id,
             'content_type' => 'user',
             'content_id' => $user->id,
             'reason' => $request->reason,
             'description' => $request->description,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         return back()->with('success', 'SIGNAL_TRANSMITTED: Moderation unit has been notified.');
@@ -100,18 +106,20 @@ class ProfileController extends Controller
     public function toggleFollow(User $user, Request $request)
     {
         $follower = $request->user();
-        
+
         if ($follower->id === $user->id) {
             return back()->with('error', 'SYSTEM_ERR: SELF_LINK_NOT_ALLOWED');
         }
 
         if ($follower->isFollowing($user)) {
             $follower->following()->detach($user->id);
+
             return back()->with('info', "Connection severed: @{$user->username}");
         } else {
             $follower->following()->syncWithoutDetaching([$user->id]);
             $follower->awardXp(10, 'followed_user', "Started following @{$user->username}", $user);
-            $user->notify(new \App\Notifications\NewFollower($follower));
+            $user->notify(new NewFollower($follower));
+
             return back()->with('success', "Node connected: @{$user->username}. +10 XP earned!");
         }
     }
@@ -126,6 +134,7 @@ class ProfileController extends Controller
 
         if ($blocker->hasBlocked($user)) {
             $blocker->blockedUsers()->where('blocked_user_id', $user->id)->delete();
+
             return back()->with('info', "Node unrestricted: @{$user->username}");
         } else {
             // Detach follow relationship if exists
@@ -134,7 +143,7 @@ class ProfileController extends Controller
 
             $blocker->blockedUsers()->create([
                 'blocked_user_id' => $user->id,
-                'reason' => $request->reason ?? 'System isolation protocol'
+                'reason' => $request->reason ?? 'System isolation protocol',
             ]);
 
             return back()->with('success', "Node isolated: @{$user->username}. Communications severed.");
@@ -145,37 +154,37 @@ class ProfileController extends Controller
     {
         return Inertia::render('Profile/Edit', [
             'user' => $request->user()->load('skills'),
-            'allSkills' => \App\Models\Skill::all(),
+            'allSkills' => Skill::all(),
         ]);
     }
 
     public function update(Request $request)
     {
         $user = $request->user();
-        
+
         // Debug incoming data
         \Log::info('Profile update incoming', [
             'has_avatar_file' => $request->hasFile('avatar_file'),
             'all_files' => array_keys($request->allFiles()),
             'all_data_keys' => array_keys($request->all()),
         ]);
-        
+
         // Validate all fields - required ones must be present
         $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'username'   => 'required|string|max:50|unique:users,username,' . $user->id,
-            'bio'        => 'nullable|string|max:500',
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:50|unique:users,username,'.$user->id,
+            'bio' => 'nullable|string|max:500',
             'github_url' => 'nullable|url',
-            'location'   => 'nullable|string',
-            'city'       => 'nullable|string',
-            'latitude'   => 'nullable|numeric',
-            'longitude'  => 'nullable|numeric',
-            'skills'     => 'nullable|array',
-            'skills.*'   => 'nullable|integer',
+            'location' => 'nullable|string',
+            'city' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'skills' => 'nullable|array',
+            'skills.*' => 'nullable|integer',
             'avatar_file' => 'nullable|image|max:2048',
-            'profile_accent_color'   => 'nullable|string',
-            'profile_theme_style'    => 'nullable|string',
-            'profile_glow_effect'    => 'nullable|boolean',
+            'profile_accent_color' => 'nullable|string',
+            'profile_theme_style' => 'nullable|string',
+            'profile_glow_effect' => 'nullable|boolean',
             'profile_matrix_intensity' => 'nullable|string',
         ]);
 
@@ -185,11 +194,11 @@ class ProfileController extends Controller
                 'size' => $request->file('avatar_file')->getSize(),
                 'mime' => $request->file('avatar_file')->getMimeType(),
             ]);
-            
+
             // Store relative path only — the User accessor will generate the correct full URL
             $path = $request->file('avatar_file')->store('avatars', 'public');
             $data['avatar'] = $path;
-            
+
             \Log::info('File stored', ['path' => $path]);
         }
 
@@ -197,12 +206,12 @@ class ProfileController extends Controller
         unset($data['skills'], $data['avatar_file']);
 
         // Only update fields that have values
-        $updateData = array_filter($data, fn($value) => $value !== null && $value !== '');
-        
+        $updateData = array_filter($data, fn ($value) => $value !== null && $value !== '');
+
         \Log::info('Updating user', ['update_data' => $updateData]);
         $user->update($updateData);
 
-        if (!empty($skills)) {
+        if (! empty($skills)) {
             // Skills are IDs, not names
             $user->skills()->sync($skills);
         }
@@ -220,17 +229,17 @@ class ProfileController extends Controller
 
         if ($request->hasFile('avatar_file')) {
             // Delete old avatar if it exists
-            if ($user->getRawOriginal('avatar') && !str_starts_with($user->getRawOriginal('avatar'), 'http')) {
+            if ($user->getRawOriginal('avatar') && ! str_starts_with($user->getRawOriginal('avatar'), 'http')) {
                 $old = ltrim(preg_replace('#^/?storage/#', '', $user->getRawOriginal('avatar')), '/');
                 Storage::disk('public')->delete($old);
             }
 
             // Store relative path only — accessor generates the full URL
-            $path = $request->file('avatar_file')->store('avatars/' . $user->id, 'public');
-            
+            $path = $request->file('avatar_file')->store('avatars/'.$user->id, 'public');
+
             $user->update(['avatar' => $path]);
 
-            return response()->json(['avatar' => asset('storage/' . $path), 'message' => 'Profile photo updated']);
+            return response()->json(['avatar' => asset('storage/'.$path), 'message' => 'Profile photo updated']);
         }
 
         return response()->json(['message' => 'No file uploaded'], 400);
@@ -240,11 +249,11 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $request->user()->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'password' => Hash::make($validated['password']),
         ]);
 
         return back()->with('success', 'Password updated successfully.');
@@ -258,13 +267,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // Log the deletion BEFORE logout so we have context if needed, 
+        // Log the deletion BEFORE logout so we have context if needed,
         // though with nullable admin_id we can log it cleanly.
         AuditLog::log(
-            admin_id: null, 
-            action: 'account_self_deletion', 
-            target_type: 'user', 
-            target_id: $user->id, 
+            admin_id: null,
+            action: 'account_self_deletion',
+            target_type: 'user',
+            target_id: $user->id,
             description: "User {$user->username} (ID: {$user->id}) decommissioned their own account."
         );
 
@@ -285,13 +294,14 @@ class ProfileController extends Controller
 
         // Use getRawOriginal to get the stored path, not the accessor's full URL
         if ($raw = $user->getRawOriginal('avatar')) {
-            if (!str_starts_with($raw, 'http')) {
+            if (! str_starts_with($raw, 'http')) {
                 $relativePath = ltrim(preg_replace('#^/?storage/#', '', $raw), '/');
                 Storage::disk('public')->delete($relativePath);
             }
         }
 
         $user->update(['avatar' => null]);
+
         return back()->with('success', 'Avatar removed successfully.');
     }
 }

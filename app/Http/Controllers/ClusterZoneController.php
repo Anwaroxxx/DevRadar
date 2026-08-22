@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Community;
 use App\Models\Event;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Inertia\Inertia;
 
 class ClusterZoneController extends Controller
@@ -33,9 +32,9 @@ class ClusterZoneController extends Controller
             ->get(['id', 'title', 'city', 'latitude', 'longitude', 'category', 'event_date']);
 
         return response()->json([
-            'users' => $users->map(fn($u) => array_merge($u->toArray(), ['type' => 'user'])),
-            'communities' => $communities->map(fn($c) => array_merge($c->toArray(), ['type' => 'community'])),
-            'events' => $events->map(fn($e) => array_merge($e->toArray(), ['type' => 'event'])),
+            'users' => $users->map(fn ($u) => array_merge($u->toArray(), ['type' => 'user'])),
+            'communities' => $communities->map(fn ($c) => array_merge($c->toArray(), ['type' => 'community'])),
+            'events' => $events->map(fn ($e) => array_merge($e->toArray(), ['type' => 'event'])),
         ]);
     }
 }

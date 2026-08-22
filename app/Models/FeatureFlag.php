@@ -30,6 +30,7 @@ class FeatureFlag extends Model
     public static function getConfig($name)
     {
         $flag = self::where('name', $name)->first();
+
         return $flag?->config ?? [];
     }
 }
