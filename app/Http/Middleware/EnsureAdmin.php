@@ -10,10 +10,6 @@ class EnsureAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'admin') {
-            abort(403, 'UNAUTHORIZED: Admin access required.');
-        }
-
-        return $next($request);
+        return app(HandleRole::class)->handle($request, $next, 'admin');
     }
 }

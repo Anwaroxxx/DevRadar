@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,36 @@ class UserFactory extends Factory
      * The current password being used by the factory.
      */
     protected static ?string $password;
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->roles()->exists()) {
+                return;
+            }
+
+            $role = Role::firstOrCreate(
+                ['name' => Role::DEVELOPER],
+                ['label' => ucfirst(Role::DEVELOPER)]
+            );
+
+            $user->roles()->syncWithoutDetaching([$role->id]);
+        });
+    }
+
+    /**
+     * Assign specific role(s) through the pivot and sync users.role.
+     */
+    public function withRole(string ...$roles): static
+    {
+        return $this->afterCreating(function (User $user) use ($roles) {
+            foreach ($roles as $role) {
+                Role::firstOrCreate(['name' => $role], ['label' => ucfirst($role)]);
+            }
+
+            $user->syncRoles($roles);
+        });
+    }
 
     /**
      * Define the model's default state.

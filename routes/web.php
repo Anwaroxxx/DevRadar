@@ -1,19 +1,24 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\JobController;
-use App\Http\Controllers\CommunityController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\LeaderboardController;
-use App\Http\Controllers\FeedController;
 use App\Http\Controllers\AiController;
-use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\ChatController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ClusterZoneController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\FeedController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\MarketplaceController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportController;
+use App\Models\Community;
+use App\Models\Event;
+use App\Models\JobListing;
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // ═══════════════════════════════════════════════════════
 // FULLY PUBLIC ROUTES — No auth required
@@ -23,21 +28,22 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
-    return \Inertia\Inertia::render('Welcome', [
+
+    return Inertia::render('Welcome', [
         'stats' => [
-            'users'       => \App\Models\User::count(),
-            'communities' => \App\Models\Community::count(),
-            'events'      => \App\Models\Event::count(),
-            'jobs'        => \App\Models\JobListing::count(),
-        ]
+            'users' => User::count(),
+            'communities' => Community::count(),
+            'events' => Event::count(),
+            'jobs' => JobListing::count(),
+        ],
     ]);
 })->name('landing');
 
-Route::get('/about',   fn() => inertia('About'))->name('about');
-Route::get('/support', fn() => inertia('Support'))->name('support');
+Route::get('/about', fn () => inertia('About'))->name('about');
+Route::get('/support', fn () => inertia('Support'))->name('support');
 Route::post('/support', [SupportController::class, 'store'])->name('support.store');
 
-Route::get('/deactivated', fn() => \Inertia\Inertia::render('Deactivated'))->name('account.deactivated');
+Route::get('/deactivated', fn () => Inertia::render('Deactivated'))->name('account.deactivated');
 
 // ═══════════════════════════════════════════════════════
 // AUTHENTICATED ROUTES — Requires login
@@ -123,52 +129,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat/{user}/messages', [ChatController::class, 'messages'])->name('chat.messages');
     Route::post('/chat/{user}', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/{user}/typing', [ChatController::class, 'typing'])->name('chat.typing');
-
-    // ─── Admin Panel ───────────────────────────────────────────
-    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
-
-        // Moderation Hub (content reports + approvals + support tickets)
-        Route::get('/moderation', [\App\Http\Controllers\Admin\ModerationController::class, 'hub'])->name('moderation.hub');
-        Route::post('/moderation/{type}/{id}/approve', [\App\Http\Controllers\Admin\ModerationController::class, 'approve'])->name('moderation.approve');
-        Route::post('/moderation/{type}/{id}/reject', [\App\Http\Controllers\Admin\ModerationController::class, 'reject'])->name('moderation.reject');
-        Route::post('/moderation/reports/{report}/resolve', [\App\Http\Controllers\Admin\ModerationController::class, 'resolveReport'])->name('moderation.resolve');
-
-        // Support Tickets
-        Route::get('/support-tickets', [SupportController::class, 'adminIndex'])->name('support-tickets');
-        Route::post('/support-tickets/{ticket}/resolve', [SupportController::class, 'adminResolve'])->name('support-tickets.resolve');
-
-        // Identity Management
-        Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users');
-        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
-        Route::post('/users/{id}/reactivate', [\App\Http\Controllers\Admin\UserController::class, 'reactivate'])->name('users.reactivate');
-        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
-        Route::post('/users/{user}/verify', [\App\Http\Controllers\Admin\UserController::class, 'verify'])->name('users.verify');
-        Route::post('/users/{user}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban'])->name('users.ban');
-        Route::post('/users/{user}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban'])->name('users.unban');
-
-        // Content Streams
-        Route::get('/events', [\App\Http\Controllers\Admin\ContentController::class, 'events'])->name('events');
-        Route::get('/jobs', [\App\Http\Controllers\Admin\ContentController::class, 'jobs'])->name('jobs');
-        Route::get('/communities', [\App\Http\Controllers\Admin\ContentController::class, 'communities'])->name('communities');
-        Route::post('/communities/{community}/snapshot', [\App\Http\Controllers\Admin\ContentController::class, 'captureSnapshot'])->name('communities.snapshot');
-        Route::get('/communities/{community}/stats', [\App\Http\Controllers\Admin\ContentController::class, 'getStats'])->name('communities.stats');
-        Route::delete('/content/{type}/{id}', [\App\Http\Controllers\Admin\ContentController::class, 'delete'])->name('content.delete');
-
-        // System Core
-        Route::get('/marketplace', [\App\Http\Controllers\Admin\SystemsController::class, 'marketplace'])->name('marketplace');
-        Route::post('/marketplace/{item}/toggle', [\App\Http\Controllers\Admin\SystemsController::class, 'toggleMarketplaceItem'])->name('marketplace.toggle');
-        Route::get('/xp-economy', [\App\Http\Controllers\Admin\SystemsController::class, 'xpEconomy'])->name('xp-economy');
-        Route::get('/ai-access', [\App\Http\Controllers\Admin\SystemsController::class, 'aiAccess'])->name('ai-access');
-        Route::get('/analytics', [\App\Http\Controllers\Admin\SystemsController::class, 'analytics'])->name('analytics');
-        Route::get('/settings', [\App\Http\Controllers\Admin\SystemsController::class, 'settings'])->name('settings');
-        Route::post('/settings/broadcast', [\App\Http\Controllers\Admin\SystemsController::class, 'broadcast'])->name('settings.broadcast');
-        Route::post('/settings/flags/{flag}/toggle', [\App\Http\Controllers\Admin\SystemsController::class, 'toggleFeatureFlag'])->name('settings.flags.toggle');
-        Route::get('/audit-logs', [\App\Http\Controllers\Admin\SystemsController::class, 'auditLogs'])->name('audit-logs');
-    });
 });
 
-require __DIR__ . '/auth.php';
+// ─── Admin Panel (role-based, split by concern) ─────────────
+require __DIR__.'/admin/dashboard.php';
+require __DIR__.'/admin/moderation.php';
+require __DIR__.'/admin/content.php';
+require __DIR__.'/admin/users.php';
+require __DIR__.'/admin/systems.php';
 
-
-
+require __DIR__.'/auth.php';

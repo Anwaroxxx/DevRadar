@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use App\Services\AchievementService;
 use App\Services\AchievementSync;
 use App\Services\LevelCalculator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
+
     protected $fillable = [
         'name', 'email', 'password', 'username', 'bio', 'avatar',
         'github_url', 'location', 'city', 'latitude', 'longitude', 'xp', 'role', 'last_login_at', 'ai_access_until', 'account_status',
@@ -20,23 +22,24 @@ class User extends Authenticatable
     ];
 
     protected $hidden = [
-        'password', 
-        'remember_token', 
-        'email', 
-        'email_verified_at', 
-        'last_login_at', 
-        'account_status', 
-        'role'
+        'password',
+        'remember_token',
+        'email',
+        'email_verified_at',
+        'last_login_at',
+        'account_status',
+        'role',
     ];
+
     protected $appends = ['is_admin', 'level', 'xp_progress', 'next_level_xp', 'level_title'];
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'last_login_at'     => 'datetime',
-            'ai_access_until'   => 'datetime',
-            'password'          => 'hashed',
+            'last_login_at' => 'datetime',
+            'ai_access_until' => 'datetime',
+            'password' => 'hashed',
         ];
     }
 
@@ -45,7 +48,7 @@ class User extends Authenticatable
         $array = parent::toArray();
         if ($this->trashed() || ($this->account_status ?? '') === 'deleted') {
             if (auth()->check() && auth()->user()->role === 'admin') {
-                $array['name'] = $array['name'] . ' [Deleted]';
+                $array['name'] = $array['name'].' [Deleted]';
             } else {
                 $array['name'] = '[deleted user]';
                 $array['username'] = 'deleted';
@@ -55,24 +58,31 @@ class User extends Authenticatable
                 $array['city'] = null;
             }
         }
+
         return $array;
     }
 
     public function getAvatarAttribute($value): ?string
     {
-        if (!$value) return null;
+        if (! $value) {
+            return null;
+        }
         // If it's already an absolute URL (e.g. from OAuth), return as-is
         if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
             return $value;
         }
         // Strip leading /storage/ or storage/ and generate full URL via asset()
         $relativePath = ltrim(preg_replace('#^/?storage/#', '', $value), '/');
-        return asset('storage/' . $relativePath);
+
+        return asset('storage/'.$relativePath);
     }
 
     public function getHasAiAccessAttribute(): bool
     {
-        if (!$this->ai_access_until) return false;
+        if (! $this->ai_access_until) {
+            return false;
+        }
+
         return $this->ai_access_until->isFuture();
     }
 
@@ -84,6 +94,50 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    // Roles
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)->withTimestamps();
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = array_map('strtolower', (array) $roles);
+
+        if ($this->relationLoaded('roles')) {
+            $userRoles = $this->roles->pluck('name')->map(fn ($name) => strtolower($name));
+
+            return $userRoles->intersect($roles)->isNotEmpty();
+        }
+
+        return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    /**
+     * Replace the user's pivot roles and keep the users.role column in sync
+     * (highest-priority role wins). The column stays the fast path for
+     * serialization and string-based queries.
+     */
+    public function syncRoles(array $names): static
+    {
+        $names = collect($names)
+            ->map(fn ($name) => strtolower(trim($name)))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $valid = Role::whereIn('name', $names)->pluck('id', 'name');
+
+        $this->roles()->sync($valid);
+
+        $primary = collect(Role::HIERARCHY)->first(fn ($role) => $valid->has($role))
+            ?? Role::DEVELOPER;
+
+        $this->forceFill(['role' => $primary])->save();
+
+        return $this;
     }
 
     // Level Attributes
@@ -100,6 +154,7 @@ class User extends Authenticatable
     public function getNextLevelXpAttribute(): int
     {
         $currentLevel = $this->level;
+
         return LevelCalculator::xpForLevel($currentLevel + 1);
     }
 
@@ -109,59 +164,115 @@ class User extends Authenticatable
     }
 
     // Relationships
-    public function achievements() { return $this->belongsToMany(Achievement::class, 'user_achievements')->withPivot('unlocked_at')->withTimestamps(); }
-    public function events() { return $this->hasMany(Event::class); }
-    public function jobListings() { return $this->hasMany(JobListing::class); }
-    public function communities() { return $this->hasMany(Community::class); }
-    public function activityLogs() { return $this->hasMany(ActivityLog::class); }
-    public function reports() { return $this->hasMany(ContentReport::class); }
-    public function marketplaceItems() { return $this->hasMany(MarketplaceItem::class); }
-    public function marketplacePurchases() { return $this->hasMany(MarketplacePurchase::class); }
-    public function xpTransactions() { return $this->hasMany(XpTransaction::class); }
-    public function badges() { return $this->belongsToMany(Badge::class, 'badge_user')->withTimestamps(); }
-    public function skills() { return $this->belongsToMany(Skill::class, 'skill_user'); }
-    public function savedEvents() {
-        return $this->belongsToMany(Event::class, 'event_user')
-                    ->withPivot('attending', 'saved')
-                    ->withTimestamps();
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class, 'user_achievements')->withPivot('unlocked_at')->withTimestamps();
     }
-    public function followedCommunities() {
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    public function jobListings()
+    {
+        return $this->hasMany(JobListing::class);
+    }
+
+    public function communities()
+    {
+        return $this->hasMany(Community::class);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(ContentReport::class);
+    }
+
+    public function marketplaceItems()
+    {
+        return $this->hasMany(MarketplaceItem::class);
+    }
+
+    public function marketplacePurchases()
+    {
+        return $this->hasMany(MarketplacePurchase::class);
+    }
+
+    public function xpTransactions()
+    {
+        return $this->hasMany(XpTransaction::class);
+    }
+
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'badge_user')->withTimestamps();
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'skill_user');
+    }
+
+    public function savedEvents()
+    {
+        return $this->belongsToMany(Event::class, 'event_user')
+            ->withPivot('attending', 'saved')
+            ->withTimestamps();
+    }
+
+    public function followedCommunities()
+    {
         return $this->belongsToMany(Community::class, 'community_user')->withTimestamps();
     }
 
-    public function sentMessages() {
+    public function sentMessages()
+    {
         return $this->hasMany(Message::class, 'sender_id');
     }
 
-    public function receivedMessages() {
+    public function receivedMessages()
+    {
         return $this->hasMany(Message::class, 'receiver_id');
     }
 
-    public function followers() {
+    public function followers()
+    {
         return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')->withTimestamps();
     }
 
-    public function following() {
+    public function following()
+    {
         return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')->withTimestamps();
     }
 
-    public function isFollowing(User $user) {
+    public function isFollowing(User $user)
+    {
         return $this->following()->where('following_id', $user->id)->exists();
     }
 
-    public function blockedUsers() {
+    public function blockedUsers()
+    {
         return $this->hasMany(UserBlock::class, 'user_id');
     }
 
-    public function blockedByUsers() {
+    public function blockedByUsers()
+    {
         return $this->hasMany(UserBlock::class, 'blocked_user_id');
     }
 
-    public function hasBlocked(User $user) {
+    public function hasBlocked(User $user)
+    {
         return $this->blockedUsers()->where('blocked_user_id', $user->id)->exists();
     }
 
-    public function isBlockedBy(User $user) {
+    public function isBlockedBy(User $user)
+    {
         return $this->blockedByUsers()->where('user_id', $user->id)->exists();
     }
 
@@ -169,55 +280,57 @@ class User extends Authenticatable
     public function awardXp(int $amount, string $action, string $description, $loggable = null): void
     {
         $this->increment('xp', $amount);
-        
-        \App\Models\ActivityLog::create([
-            'user_id'     => $this->id,
-            'action'      => $action,
+
+        ActivityLog::create([
+            'user_id' => $this->id,
+            'action' => $action,
             'description' => $description,
-            'xp_change'   => $amount,
-            'loggable_id'   => $loggable?->id ?? 0,
+            'xp_change' => $amount,
+            'loggable_id' => $loggable?->id ?? 0,
             'loggable_type' => $loggable ? get_class($loggable) : 'general',
         ]);
 
-        \App\Models\XpTransaction::create([
+        XpTransaction::create([
             'user_id' => $this->id,
             'amount' => $amount,
             'description' => $description,
             'reference_type' => $loggable ? get_class($loggable) : null,
             'reference_id' => $loggable?->id,
         ]);
-        
+
         $this->checkBadges();
     }
 
     public function spendXp(int $amount, string $action, string $description): bool
     {
-        if ($this->xp < $amount) return false;
+        if ($this->xp < $amount) {
+            return false;
+        }
         $this->decrement('xp', $amount);
-        
-        \App\Models\ActivityLog::create([
-            'user_id'     => $this->id,
-            'action'      => $action,
+
+        ActivityLog::create([
+            'user_id' => $this->id,
+            'action' => $action,
             'description' => $description,
-            'xp_change'   => -$amount,
-            'loggable_id'   => 0,
+            'xp_change' => -$amount,
+            'loggable_id' => 0,
             'loggable_type' => 'marketplace',
         ]);
 
-        \App\Models\XpTransaction::create([
+        XpTransaction::create([
             'user_id' => $this->id,
             'amount' => -$amount,
             'description' => $description,
             'reference_type' => 'marketplace',
             'reference_id' => null,
         ]);
-        
+
         return true;
     }
 
     public function checkBadges(): void
     {
         AchievementSync::sync($this); // Old system
-        \App\Services\AchievementService::evaluate($this); // New feature
+        AchievementService::evaluate($this); // New feature
     }
 }

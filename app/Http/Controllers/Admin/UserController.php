@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -18,8 +17,8 @@ class UserController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'LIKE', "%{$request->search}%")
-                  ->orWhere('email', 'LIKE', "%{$request->search}%")
-                  ->orWhere('username', 'LIKE', "%{$request->search}%");
+                    ->orWhere('email', 'LIKE', "%{$request->search}%")
+                    ->orWhere('username', 'LIKE', "%{$request->search}%");
             });
         }
 
@@ -33,7 +32,7 @@ class UserController extends Controller
             ->through(fn ($user) => $user->makeVisible(['email', 'role', 'account_status']));
 
         return Inertia::render('Admin/Users', [
-            'users'   => $users,
+            'users' => $users,
             'filters' => $request->only(['search', 'role']),
         ]);
     }
@@ -41,12 +40,13 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
-            'role'              => 'required|in:developer,admin',
-            'xp'               => 'required|integer|min:0',
-            'ai_access_until'  => 'nullable|date',
+            'role' => 'required|in:developer,moderator,admin',
+            'xp' => 'required|integer|min:0',
+            'ai_access_until' => 'nullable|date',
         ]);
 
-        $user->update($data);
+        $user->fill(collect($data)->except('role')->all())->save();
+        $user->syncRoles([$data['role']]);
 
         return back()->with('success', "User @{$user->username} updated successfully.");
     }
@@ -54,11 +54,11 @@ class UserController extends Controller
     public function reactivate($id)
     {
         $user = User::withTrashed()->findOrFail($id);
-        
+
         if ($user->trashed()) {
             $user->restore();
         }
-        
+
         $user->update(['account_status' => 'active']);
 
         AuditLog::log(
@@ -75,7 +75,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        
+
         if ($user->role === 'admin') {
             $adminCount = User::where('role', 'admin')->count();
             if ($adminCount <= 1) {
@@ -84,12 +84,14 @@ class UserController extends Controller
         }
         $username = $user->username;
         $user->delete();
+
         return back()->with('success', "User @{$username} deleted.");
     }
 
     public function verify(User $user)
     {
         $user->update(['is_verified_user' => true]);
+
         return back()->with('success', "User @{$user->username} verified.");
     }
 
@@ -121,6 +123,7 @@ class UserController extends Controller
     public function unban(User $user)
     {
         $user->update(['banned_at' => null]);
+
         return back()->with('success', "Ban lifted from @{$user->username}.");
     }
 }
