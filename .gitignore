@@ -26,3 +26,16 @@ Homestead.yaml
 /.nova
 /.vscode
 /.zed
+
+# Agent/AI instruction files (local only)
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursorrules
+.cursor/
+.github/copilot-instructions.md
+
+# Internal docs & notes
+prompt.md
+docs/
+NOTES.md
